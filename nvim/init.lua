@@ -2,12 +2,11 @@
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
-
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
 vim.opt.background = "dark"
-vim.opt.termguicolors = false
+vim.opt.termguicolors = true
 
 require("config.lazy")
 
@@ -19,3 +18,7 @@ vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help ta
 
 -- Keymap for nvim-tree
 vim.keymap.set('n', '<leader>ft', function() require("nvim-tree.api").tree.toggle() end, { desc = "Toggle nvim-tree" })
+
+-- Keymap for terminal
+vim.keymap.set('n', '<leader>t', ':terminal<CR>', opts)
+vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', opts)
