@@ -49,3 +49,6 @@
 /user-dirs.locale
 /user-tmpfiles.d
 /xsettingsd
+/autostart
+/toolbox
+/plasmarc
