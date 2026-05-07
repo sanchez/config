@@ -1,5 +1,52 @@
 local M = {}
 
+function M.get_all_keymaps(mode)
+  local maps = {}
+  local buffers = { 0, -1 }
+  for _, buf in ipairs(buffers) do
+    if buf == -1 then
+      local ok, result = pcall(vim.api.nvim_list_bufs)
+      if not ok then
+        result = {}
+      end
+      for _, b in ipairs(result) do
+        if vim.api.nvim_buf_is_loaded(b) then
+          local ok2, m = pcall(vim.api.nvim_buf_get_keymap, b, mode)
+          if ok2 then
+            for _, map in ipairs(m) do
+              if map.desc and map.desc ~= "" then
+                table.insert(maps, {
+                  lhs = map.lhs,
+                  rhs = map.callback or map.rhs,
+                  desc = map.desc,
+                  mode = mode,
+                  buffer = b,
+                })
+              end
+            end
+          end
+        end
+      end
+    else
+      local ok, m = pcall(vim.api.nvim_buf_get_keymap, buf, mode)
+      if ok then
+        for _, map in ipairs(m) do
+          if map.desc and map.desc ~= "" then
+            table.insert(maps, {
+              lhs = map.lhs,
+              rhs = map.callback or map.rhs,
+              desc = map.desc,
+              mode = mode,
+              buffer = buf,
+            })
+          end
+        end
+      end
+    end
+  end
+  return maps
+end
+
 function M.parse(mapping)
   if type(mapping) == "string" then
     return { lhs = mapping }
@@ -30,15 +77,15 @@ function M.build_tree(mappings, mode)
   local root = M.create_node("root")
 
   for _, mapping in ipairs(mappings) do
-    if mapping.mode and mapping.mode ~= mode then goto continue end
-
-    local lhs = mapping.lhs or mapping[1]
+    local lhs = mapping.lhs
     if not lhs then goto continue end
 
     local keys = lhs
-    if keys:match("^<leader>") then
-      keys = keys:gsub("<leader>", "")
+    if keys:match("^<Leader>") or keys:match("^<leader>") then
+      keys = keys:gsub("<[Ll]eader>", "")
     end
+
+    if #keys == 0 then goto continue end
 
     local parts = {}
     for i = 1, #keys do
@@ -309,18 +356,15 @@ function M.show(opts)
   local global = opts.global ~= false
 
   local mode = vim.api.nvim_get_mode().mode
-  local buffer = global and 0 or vim.api.nvim_get_current_buf()
 
-  local tree = nil
-  if wk.trees[buffer] and wk.trees[buffer][mode] then
-    tree = wk.trees[buffer][mode]
-  elseif wk.trees[0] and wk.trees[0][mode] then
-    tree = wk.trees[0][mode]
+  local maps = M.get_all_keymaps(mode)
+
+  if #maps == 0 then
+    vim.api.nvim_echo({ { "No mappings found", "WarningMsg" } }, true, {})
+    return
   end
 
-  if not tree then
-    tree = M.build_tree(wk.registered_mappings, mode)
-  end
+  local tree = M.build_tree(maps, mode)
 
   local state_obj = State.start({ keys = "" })
   wk.state.active = true
