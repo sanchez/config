@@ -16,9 +16,11 @@ vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live gr
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 
--- Keymap for nvim-tree
 vim.keymap.set('n', '<leader>ft', function() require("nvim-tree.api").tree.toggle() end, { desc = "Toggle nvim-tree" })
 
--- Keymap for terminal
-vim.keymap.set('n', '<leader>t', ':terminal<CR>', opts)
-vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', opts)
+vim.keymap.set('n', '<leader>t', ':terminal<CR>', {})
+vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', {})
+
+local wk = dofile(vim.fs.joinpath(vim.fn.stdpath("config"), "lua", "packages", "which-key-local", "init.lua"))
+wk.setup()
+vim.keymap.set("n", "<leader>?", function() wk.show({ global = false }) end, { desc = "Buffer Local Keymaps" })
