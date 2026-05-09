@@ -22,6 +22,9 @@ vim.opt.signcolumn = "yes"
 vim.cmd('autocmd BufEnter * set formatoptions-=cro')
 vim.cmd('autocmd BufEnter * setlocal formatoptions-=cro')
 
+-- make sure to keep certain number of lines above and below the cursor
+vim.opt.scrolloff = 5
+
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
@@ -43,9 +46,10 @@ vim.keymap.set('n', '<leader>ft', function() require("nvim-tree.api").tree.toggl
 vim.keymap.set('n', '<leader>t', ':terminal<CR>', {})
 vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', {})
 
-local wk = dofile(vim.fs.joinpath(vim.fn.stdpath("config"), "lua", "packages", "which-key-local", "init.lua"))
-wk.setup()
-vim.keymap.set("n", "<leader>?", function() wk.show({ global = false }) end, { desc = "Buffer Local Keymaps" })
+-- Move between tabs
+vim.keymap.set('n', '<leader>bl', ':bnext<CR>')
+vim.keymap.set('n', '<leader>bh', ':bprevious<CR>')
+vim.keymap.set('n', '<leader>bd', ':bd<CR>')
 
 -- Show diagnostics automatically when cursor rests on a line
 vim.api.nvim_create_autocmd("CursorHold", {
