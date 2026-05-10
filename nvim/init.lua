@@ -83,3 +83,21 @@ vim.api.nvim_create_autocmd("LspProgress", {
     end
   end,
 })
+
+-- reload the entire nvim setup
+local function reload_config()
+    local keys = {}
+    for k, _ in pairs(package.loaded) do
+        if k:match("^packages") or k:match("^loader") then
+            table.insert(keys, k)
+            package.loaded[k] = nil
+        end
+    end
+    local keystring = table.concat(keys, ', ')
+    print(keystring)
+
+    dofile(vim.env.MYVIMRC)
+    -- vim.notify("Config reloaded!", vim.log.levels.INFO)
+end
+
+vim.keymap.set("n", "<leader>r", reload_config, { desc = "Reload config" })

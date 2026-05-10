@@ -1,6 +1,11 @@
 local M = {}
 M.__index = M
 
+local function destructor(obj)
+    vim.api.nvim_buf_delete(obj.buffer, { force = true })
+end
+M.__destructor = destructor
+
 function M.new(opts)
     opts = opts or {}
 
@@ -38,6 +43,20 @@ function M:show()
     vim.api.nvim_set_option_value("foldenable", false, { scope = "local", win = self.win })
     vim.api.nvim_set_option_value("wrap", false, { scope = "local", win = self.win })
     vim.api.nvim_set_option_value("scrollbind", false, { scope = "local", win = self.win })
+
+    vim.api.nvim_create_autocmd("WinClosed", {
+        pattern = tostring(self.win),
+        callback = function()
+            vim.cmd("stopinsert")
+        end,
+        once = true
+    })
+end
+
+function M:focus()
+    if self:is_valid() then
+        vim.api.nvim_set_current_win(self.win)
+    end
 end
 
 function M:close()
