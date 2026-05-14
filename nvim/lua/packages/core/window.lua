@@ -21,7 +21,7 @@ function M.new(opts)
             relative = opts.relative or "editor",
             row = opts.row or 0,
             col = opts.col or 0,
-            style = opts.style or "minimal",
+            style = opts.style or "testing",
             noautocmd = opts.noautocmd or true,
         },
 
