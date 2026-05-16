@@ -1,4 +1,6 @@
 local vars = require("packages.core.vars").get_vars()
+local ai = require("packages.core.opencode")
+local apiKey = vars["OPENCODE_API_KEY"]
 
 -- local PromptPopup = require("packages.core.promptpopup")
 
@@ -6,9 +8,20 @@ local vars = require("packages.core.vars").get_vars()
 
 -- TODO: I want to change this to be based on visual mode, if the user has lines selected then open the prompt window to provide a prompt
 vim.keymap.set('n', '<leader>c', function ()
-    vim.notify("CodeHub!", "info")
+    -- ai.list_models(apiKey, function(model_ids)
+    --     vim.notify(vim.inspect(model_ids), "info")
+    -- end)
 
-    vim.notify(vim.inspect(vars), "info")
+    -- The fast request
+    -- ai.openai_request(apiKey, "deepseek-v4-flash")
+
+    -- The best quality
+    ai.anthropic_request(apiKey, "minimax-m2.7")
+
+
+
+
+
 
     -- vim.ui.input({ prompt = "Prompt: "}, function(input)
     --     vim.notify(input, "info")

@@ -52,6 +52,10 @@ vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', {})
 vim.keymap.set('n', '<leader>bl', ':bnext<CR>')
 vim.keymap.set('n', '<leader>bh', ':bprevious<CR>')
 vim.keymap.set('n', '<leader>bd', ':bd<CR>')
+vim.keymap.set('n', '<leader>bn', function()
+    local n = vim.fn.input('Buffer number: ')
+    vim.cmd('buffer ' .. n)
+end, { desc = "Jump to buffer by number" })
 
 -- Show diagnostics automatically when cursor rests on a line
 vim.api.nvim_create_autocmd("CursorHold", {

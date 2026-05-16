@@ -7,6 +7,7 @@ return {
             options = {
                 diagnostics = "nvim_lsp",
                 always_show_bufferline = true,
+                numbers = "buffer_id",
             }
         })
     end,
