@@ -8,6 +8,7 @@ local OpenAIProvider = require("packages.core.ai.openai")
 local AnthropicProvider = require("packages.core.ai.anthropic")
 
 -- local PromptPopup = require("packages.core.promptpopup")
+local Pindow = require("packages.codehub.pindow")
 
 local agent_provider = AnthropicProvider.new("https://opencode.ai", apiKey, "minimax-m2.7")
 local fast_provider = OpenAIProvider.new("https://opencode.ai", apiKey, "deepseek-v4-flash")
@@ -19,11 +20,13 @@ vim.keymap.set('n', '<leader>c', function ()
     async.exec(function()
         -- local model_ids = ai.list_models(apiKey)
 
-        local session = Session.new(agent_provider)
-        session:add_message("user", "Hello, tell me about yourself")
-        session:execute()
+        -- local session = Session.new(agent_provider)
+        -- session:add_message("user", "Hello, tell me about yourself")
+        -- session:execute()
+        --
+        -- session:debug()
 
-        session:debug()
+        local pindow = Pindow.new()
 
     end)
 
