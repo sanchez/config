@@ -1,31 +1,28 @@
 local async = require("packages.core.async")
 
 local vars = require("packages.core.vars").get_vars()
-local ai = require("packages.core.opencode")
 local apiKey = vars["OPENCODE_API_KEY"]
 
+local Session = require("packages.core.ai.session")
+local OpenAIProvider = require("packages.core.ai.openai")
+local AnthropicProvider = require("packages.core.ai.anthropic")
+
 -- local PromptPopup = require("packages.core.promptpopup")
+
+local agent_provider = AnthropicProvider.new("https://opencode.ai", apiKey, "minimax-m2.7")
+local fast_provider = OpenAIProvider.new("https://opencode.ai", apiKey, "deepseek-v4-flash")
 
 
 
 -- TODO: I want to change this to be based on visual mode, if the user has lines selected then open the prompt window to provide a prompt
 vim.keymap.set('n', '<leader>c', function ()
     async.exec(function()
+        -- local model_ids = ai.list_models(apiKey)
 
-        local model_ids = ai.list_models(apiKey)
-        print(vim.inspect(model_ids))
+        local session = Session.new(agent_provider)
+        session:execute()
 
     end)
-    -- ai.list_models(apiKey, function(model_ids)
-    --     vim.notify(vim.inspect(model_ids), "info")
-    -- end)
-
-    -- The fast request
-    -- ai.openai_request(apiKey, "deepseek-v4-flash")
-
-    -- The best quality
-    -- ai.anthropic_request(apiKey, "minimax-m2.7")
-
 
 
 
