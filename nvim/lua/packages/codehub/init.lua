@@ -20,7 +20,10 @@ vim.keymap.set('n', '<leader>c', function ()
         -- local model_ids = ai.list_models(apiKey)
 
         local session = Session.new(agent_provider)
+        session:add_message("user", "Hello, tell me about yourself")
         session:execute()
+
+        session:debug()
 
     end)
 

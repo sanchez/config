@@ -30,15 +30,23 @@ function M:add_message(role, message)
     })
 end
 
+
 function M:add_costs(cost, input_tokens, output_tokens)
     self.total_cost = self.total_cost + cost
     self.input_tokens = self.input_tokens + input_tokens
     self.output_tokens = self.output_tokens + output_tokens
 end
 
+
 function M:execute()
-    local result = self.endpoint_func(self)
+    self.endpoint_func(self)
 end
 
+
+function M:debug()
+    for _, message in ipairs(self.history) do
+        print(message.role .. ": " .. message.content)
+    end
+end
 
 return M
