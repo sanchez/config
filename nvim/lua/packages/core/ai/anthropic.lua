@@ -78,6 +78,8 @@ local function handle_response(session, response)
             -- TODO: Add support for thinking blocks
         elseif block.type == "text" then
             session:add_message("assistant", block.text)
+        else
+            print("Found unsupported role: " .. block.type)
         end
     end
 end

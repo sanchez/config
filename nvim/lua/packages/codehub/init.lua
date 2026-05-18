@@ -17,18 +17,44 @@ local fast_provider = OpenAIProvider.new("https://opencode.ai", apiKey, "deepsee
 
 -- TODO: I want to change this to be based on visual mode, if the user has lines selected then open the prompt window to provide a prompt
 vim.keymap.set('n', '<leader>c', function ()
-    async.exec(function()
-        -- local model_ids = ai.list_models(apiKey)
+    -- local model_ids = ai.list_models(apiKey)
 
-        -- local session = Session.new(agent_provider)
-        -- session:add_message("user", "Hello, tell me about yourself")
-        -- session:execute()
-        --
-        -- session:debug()
+    -- local session = Session.new(agent_provider)
+    -- session:add_message("user", "Hello, tell me about yourself")
+    -- session:execute()
+    --
+    -- session:debug()
 
-        local pindow = Pindow.new()
+    local session = Session.new(agent_provider)
 
+    local pindow = Pindow.new("CodeHub", function(input)
+        async.exec(function()
+            session:add_message("user", input)
+            session:execute()
+        end)
     end)
+
+    -- Handle updating the window whenever the session is updated
+    session:set_listener(function()
+        local lines = {}
+
+        for _, block in ipairs(session.history) do
+            local block_lines = vim.split(block.content, "\n")
+            for _, line in ipairs(block_lines) do
+                table.insert(lines, block.role .. ": " .. line)
+            end
+        end
+
+        if session.is_thinking then
+            table.insert(lines, "")
+            table.insert(lines, "")
+            table.insert(lines, "")
+            table.insert(lines, "Thinking...")
+        end
+
+        pindow:render(lines)
+    end)
+
 
 
 

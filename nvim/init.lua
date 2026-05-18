@@ -33,6 +33,7 @@ vim.opt.termguicolors = true
 
 require("loader")
 require("config.lazy")
+vim.cmd("colorscheme catppuccin-latte")
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Telescope find files' })

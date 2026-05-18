@@ -9,6 +9,10 @@ function M.new(endpoint_func)
         total_cost = 0,
         input_tokens = 0,
         output_tokens = 0,
+
+        is_thinking = false,
+        on_update = function()
+        end,
     }, M)
 end
 
@@ -28,6 +32,13 @@ function M:add_message(role, message)
         role = role,
         content = message,
     })
+
+    self.on_update()
+end
+
+
+function M:set_listener(callback)
+    self.on_update = callback
 end
 
 
@@ -39,7 +50,16 @@ end
 
 
 function M:execute()
+    if self.is_thinking then
+        return
+    end
+    self.is_thinking = true
+    self.on_update()
+
     self.endpoint_func(self)
+
+    self.is_thinking = false
+    self.on_update()
 end
 
 
