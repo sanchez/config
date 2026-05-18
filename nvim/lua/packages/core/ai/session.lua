@@ -2,9 +2,12 @@ local M = {}
 M.__index = M
 
 
-function M.new(endpoint_func)
+function M.new(endpoint_func, tools)
+    tools = tools or {}
+
     return setmetatable({
         history = {},
+        tools = tools,
         endpoint_func = endpoint_func,
         total_cost = 0,
         input_tokens = 0,

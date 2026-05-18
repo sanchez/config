@@ -3,6 +3,7 @@ local async = require("packages.core.async")
 local vars = require("packages.core.vars").get_vars()
 local apiKey = vars["OPENCODE_API_KEY"]
 
+local Tool = require("packages.core.ai.tool")
 local Session = require("packages.core.ai.session")
 local OpenAIProvider = require("packages.core.ai.openai")
 local AnthropicProvider = require("packages.core.ai.anthropic")
@@ -13,7 +14,16 @@ local Pindow = require("packages.codehub.pindow")
 local agent_provider = AnthropicProvider.new("https://opencode.ai", apiKey, "minimax-m2.7")
 local fast_provider = OpenAIProvider.new("https://opencode.ai", apiKey, "deepseek-v4-flash")
 
-local session = Session.new(agent_provider)
+local session = Session.new(agent_provider, {
+    Tool.new({
+        name = "get_time",
+        description = "Use to get the current system time",
+        inputs = {},
+        callback = function(inputs)
+            error("Not Implemented")
+        end
+    })
+})
 
 
 local function format_token_number(num)

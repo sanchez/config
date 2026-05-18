@@ -18,9 +18,45 @@ local function get_session_messages(session)
 end
 
 
+local function get_session_tools(session)
+    local tools = {}
+    for _, tool in ipairs(session.tools) do
+        local tool_definition = {
+            name = tool.name,
+            description = tool.description,
+        }
+
+        local properties = {}
+        local required_properties = {}
+        for _, property in ipairs(tool.inputs) do
+            properties[property.name] = {
+                type = property.name,
+                description = property.description
+            }
+            if property.is_reuqired then
+                table.insert(required_properties, property.name)
+            end
+        end
+
+        if properties then
+            tool_definition.input_schema = {
+                type = "object",
+                properties = properties,
+                required = required_properties,
+            }
+        end
+
+        table.insert(tools, tool_definition)
+    end
+
+    return tools
+end
+
+
 local function make_request(hostname, api_key, model_id, session)
     local url = hostname .. "/zen/go/v1/messages"
     local messages = get_session_messages(session)
+    local tools = get_session_tools(session)
 
     local result = web.create_json_request("POST", url, {
         ["Content-Type"] = "application/json",
@@ -34,21 +70,7 @@ local function make_request(hostname, api_key, model_id, session)
             thinking = {
                 type = "adaptive",
             },
-            tools = {
-                {
-                    name = "name",
-                    input_schema = {
-                        type = "object",
-                        properties = {
-                            location = "bar",
-                            unit = "bar",
-                        },
-                        required = {
-                            "location"
-                        },
-                    },
-                },
-            },
+            tools = tools,
         },
     })
 
