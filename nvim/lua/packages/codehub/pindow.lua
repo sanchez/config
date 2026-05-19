@@ -19,14 +19,7 @@ local function create_buffers()
 
     vim.api.nvim_buf_set_lines(input_buf, 0, -1, false, { "" })
 
-    local output_buf = vim.api.nvim_create_buf(false, true)
-    vim.bo[output_buf].buftype = "nofile"
-    vim.bo[output_buf].bufhidden = "wipe"
-    vim.bo[output_buf].swapfile = false
-    vim.bo[output_buf].modifiable = false
-    -- vim.bo[output_buf].filetype = "CodeHubPindowOutput"
-
-    return input_buf, output_buf
+    return input_buf
 end
 
 
@@ -59,8 +52,17 @@ local function create_windows(sidebar_width, input_buf, output_buf)
     return input_win, output_win
 end
 
+local function configure_styling(output_buf)
+    local ns = vim.api.nvim_create_namespace("CodeHub")
+    vim.api.nvim_set_hl(ns, "MyCustomStyle", { fg = "#ff007c", bg = "#282c34", bold = true })
 
-function M.new(title, callback)
+    return ns
+end
+
+configure_styling()
+
+
+function M.new(title, output_buf, callback)
     local ns = vim.api.nvim_create_namespace("CodeHub_Pindow")
 
     local total_lines = vim.o.lines - vim.o.cmdheight
@@ -70,7 +72,7 @@ function M.new(title, callback)
     local output_height = total_lines - input_height - 2
     local column = vim.o.columns - sidebar_width
 
-    local input_buf, output_buf = create_buffers()
+    local input_buf = create_buffers()
     local input_win, output_win = create_windows(sidebar_width, input_buf, output_buf)
 
     vim.keymap.set("n", "<CR>", function()

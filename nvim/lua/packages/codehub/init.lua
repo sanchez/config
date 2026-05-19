@@ -19,9 +19,6 @@ local session = Session.new(agent_provider, {
         name = "get_time",
         description = "Use to get the current system time",
         inputs = {},
-        callback = function(inputs)
-            error("Not Implemented")
-        end
     })
 })
 
@@ -43,39 +40,39 @@ end
 vim.keymap.set('n', '<leader>c', function ()
     -- local model_ids = ai.list_models(apiKey)
 
-    local pindow = Pindow.new("CodeHub", function(input)
+    local pindow = Pindow.new("CodeHub", session.buffer, function(input)
         async.exec(function()
             session:add_message("user", input)
-            session:execute()
+            -- session:execute()
         end)
     end)
 
     -- Handle updating the window whenever the session is updated
-    session:set_listener(function()
-        local lines = {}
-
-        for _, block in ipairs(session.history) do
-            local block_lines = vim.split(block.content, "\n")
-            for _, line in ipairs(block_lines) do
-                table.insert(lines, block.role .. ": " .. line)
-            end
-        end
-
-        if session.is_thinking then
-            table.insert(lines, "")
-            table.insert(lines, "")
-            table.insert(lines, "")
-            table.insert(lines, "Thinking...")
-        end
-
-        table.insert(lines, "")
-        table.insert(lines, 
-            "Cost: $" .. session.total_cost ..
-            ", I:" .. format_token_number(session.input_tokens) ..
-            ", O:" .. format_token_number(session.output_tokens))
-
-        pindow:render(lines)
-    end)
+    -- session:set_listener(function()
+    --     local lines = {}
+    --
+    --     for _, block in ipairs(session.history) do
+    --         local block_lines = vim.split(block.content, "\n")
+    --         for _, line in ipairs(block_lines) do
+    --             table.insert(lines, block.role .. ": " .. line)
+    --         end
+    --     end
+    --
+    --     if session.is_thinking then
+    --         table.insert(lines, "")
+    --         table.insert(lines, "")
+    --         table.insert(lines, "")
+    --         table.insert(lines, "Thinking...")
+    --     end
+    --
+    --     table.insert(lines, "")
+    --     table.insert(lines, 
+    --         "Cost: $" .. session.total_cost ..
+    --         ", I:" .. format_token_number(session.input_tokens) ..
+    --         ", O:" .. format_token_number(session.output_tokens))
+    --
+    --     pindow:render(lines)
+    -- end)
 
 
 
