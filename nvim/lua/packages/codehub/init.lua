@@ -40,10 +40,10 @@ end
 vim.keymap.set('n', '<leader>c', function ()
     -- local model_ids = ai.list_models(apiKey)
 
-    local pindow = Pindow.new("CodeHub", session.buffer, function(input)
+    local pindow = Pindow.new("CodeHub", session.ns, session.buffer, function(input)
         async.exec(function()
             session:add_message("user", input)
-            -- session:execute()
+            session:execute()
         end)
     end)
 

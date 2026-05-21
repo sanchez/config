@@ -23,11 +23,12 @@ local function create_buffers()
 end
 
 
-local function create_windows(sidebar_width, input_buf, output_buf)
+local function create_windows(ns, sidebar_width, input_buf, output_buf)
     -- Right pinned vertical split
     vim.cmd("botright vertical " .. sidebar_width .. "split")
     local output_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_buf(output_win, output_buf)
+    vim.api.nvim_win_set_hl_ns(output_win, ns)
 
     -- Split the sidebar itself into top list + bottom text
     vim.cmd("belowright split")
@@ -52,17 +53,8 @@ local function create_windows(sidebar_width, input_buf, output_buf)
     return input_win, output_win
 end
 
-local function configure_styling(output_buf)
-    local ns = vim.api.nvim_create_namespace("CodeHub")
-    vim.api.nvim_set_hl(ns, "MyCustomStyle", { fg = "#ff007c", bg = "#282c34", bold = true })
 
-    return ns
-end
-
-configure_styling()
-
-
-function M.new(title, output_buf, callback)
+function M.new(title, ns, output_buf, callback)
     local ns = vim.api.nvim_create_namespace("CodeHub_Pindow")
 
     local total_lines = vim.o.lines - vim.o.cmdheight
@@ -73,7 +65,7 @@ function M.new(title, output_buf, callback)
     local column = vim.o.columns - sidebar_width
 
     local input_buf = create_buffers()
-    local input_win, output_win = create_windows(sidebar_width, input_buf, output_buf)
+    local input_win, output_win = create_windows(ns, sidebar_width, input_buf, output_buf)
 
     vim.keymap.set("n", "<CR>", function()
         local lines = vim.api.nvim_buf_get_lines(input_buf, 0, -1, false)

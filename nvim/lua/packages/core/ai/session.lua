@@ -9,23 +9,33 @@ end
 M.__destructor = destructor
 
 
+local function apply_highlights()
+    vim.api.nvim_set_hl(0, "CodeHubUser", { fg = "#5ef1ff", bold = true })
+    vim.api.nvim_set_hl(0, "CodeHubAssistant", { fg = "#000000", bg = "#ff00ff", bold = true })
+    vim.api.nvim_set_hl(0, "CodeHubDetails", { fg = "#888888", italic = true })
+end
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+    callback = apply_highlights
+})
+apply_highlights()
+
+
 local function create_buffer()
     local ns = vim.api.nvim_create_namespace("CodeHub")
 
-    vim.api.nvim_set_hl(ns, "user", { fg = "#5ef1ff", bold = true })
-    vim.api.nvim_set_hl(ns, "assistant", { fg = "#ff5ef1", bold = true })
-    vim.api.nvim_set_hl(ns, "details", { fg = "#888888", italic = true })
-
     local buffer = vim.api.nvim_create_buf(false, true)
-    vim.bo[buffer].buftype = "nofile"
-    vim.bo[buffer].bufhidden = "wipe"
     vim.bo[buffer].swapfile = false
-    vim.bo[buffer].modifiable = false
 
     vim.api.nvim_set_option_value("buftype", "nofile", { buf = buffer })
-    vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buffer })
+    vim.api.nvim_set_option_value("bufhidden", "hide", { buf = buffer })
 
-    -- vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { "" })
+    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { "Welcome to CodeHub, more details to come!", "" })
+    vim.api.nvim_buf_set_extmark(buffer, ns, 0, 0, {
+      line_hl_group = "Comment",
+    })
+
+    vim.api.nvim_set_option_value("modifiable", false, { buf = buffer })
 
     return ns, buffer
 end
@@ -54,13 +64,35 @@ function M.new(endpoint_func, tools)
 end
 
 
+local function format_token_number(num)
+    if num > 1e9 then
+        return string.format("%.2fb", num / 1e9)
+    elseif num > 1e6 then
+        return string.format("%.2fm", num / 1e6)
+    elseif num > 1e3 then
+        return string.format("%.2fk", num / 1e3)
+    end
+    return tostring(num)
+end
+
+
 function M:_update_footer()
     local line_count = vim.api.nvim_buf_line_count(self.buffer)
 
+    local status_message = "Unknown..."
+    if self.is_thinking then
+        status_message = "Thinking..."
+    else
+        status_message = 
+            "Cost: $" .. self.total_cost ..
+            " I: " .. format_token_number(self.input_tokens) ..
+            " O: " .. format_token_number(self.output_tokens)
+    end
+
     -- metadata content
     local footer_content = {
-        "",
-        "Type /msg <user> to whisper..."
+        { { "" } },
+        { { status_message } },
     }
 
     if self.footer_extmark then
@@ -79,18 +111,25 @@ function M:_write_message(role, message)
         return
     end
 
-    vim.bo[self.buffer].modifiable = false
+    local hl_map = {
+        user = "Function",
+        assistant = "Normal",
+        details = "Comment",
+    }
 
-    local last_line = vim.api.nvim_buf_line_count(self.buffer)
+    vim.bo[self.buffer].modifiable = true
 
-    -- insert the new message
-    vim.api.nvim_buf_set_lines(self.buffer, -1, -1, false, { message })
+    local row = vim.api.nvim_buf_line_count(self.buffer)
 
-    -- style the new message
-    vim.api.nvim_buf_set_extmark(self.buffer, self.ns, last_line, 0, {
-        end_row = last_line,
-        end_col = #message,
-        hl_group = role,
+    local messages = {}
+    for line in (message .. "\n"):gmatch("(.-)\n") do
+        table.insert(messages, line)
+    end
+
+    vim.api.nvim_buf_set_lines(self.buffer, -1, -1, false, messages)
+    vim.api.nvim_buf_set_extmark(self.buffer, self.ns, row, 0, {
+        end_row = row + #messages - 1,
+        line_hl_group = hl_map[role],
     })
 
     -- reposition the footer to the new bottom
@@ -104,7 +143,7 @@ function M:_write_message(role, message)
         })
     end
 
-    vim.bo[self.buffer].modifiable = true
+    vim.bo[self.buffer].modifiable = false
 end
 
 
@@ -124,7 +163,7 @@ function M:add_message(role, message)
         content = message,
     })
 
-    self:write_message(role, message)
+    self:_write_message(role, message)
 end
 
 
@@ -140,10 +179,12 @@ function M:execute()
         return
     end
     self.is_thinking = true
+    self:_update_footer()
 
     self.endpoint_func(self)
 
     self.is_thinking = false
+    self:_update_footer()
 end
 
 
