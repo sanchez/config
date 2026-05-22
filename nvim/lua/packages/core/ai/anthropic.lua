@@ -6,15 +6,17 @@ M.__index = M
 
 
 local function get_session_messages(session)
-    local messages = {}
-    for _, message in ipairs(session.history) do
-        table.insert(messages, {
-            role = message.role,
-            content = message.content,
-        })
-    end
+    return session.history
 
-    return messages
+    -- local messages = {}
+    -- for _, message in ipairs(session.history) do
+    --     table.insert(messages, {
+    --         role = message.role,
+    --         content = message.content,
+    --     })
+    -- end
+    --
+    -- return messages
 end
 
 
@@ -94,24 +96,59 @@ end
 local function handle_response(session, response)
     session:add_costs(response.cost, response.usage.input_tokens, response.usage.output_tokens)
 
+    local send_again = false
+
     for i, block in ipairs(response.content) do
         if block.type == "thinking" then
             -- We currently skip thinking blocks
             -- TODO: Add support for thinking blocks
+            session:add_debug_line("Thinking: " .. block.thinking)
+            session:add_debug_line("")
         elseif block.type == "text" then
             session:add_message("assistant", block.text)
+        elseif block.type == "tool_use" then
+            session:add_debug_line("Calling Tool: " .. block.name)
+            session:add_message("assistant", { block }, false)
+            session:add_debug_line(vim.inspect(block))
+
+            local result = session:call_tool(block.name, block.input)
+            if type(result) == "table" then
+                result = vim.fn.json_encode(result)
+            end
+
+            session:add_debug_line("Tool Result: " .. result)
+
+            session:add_message("user", {{
+                type = "tool_result",
+                tool_use_id = block.id,
+                content = result
+            }}, false)
+
+            send_again = true
+
         else
-            print("Found unsupported role: " .. block.type)
+            session:add_error_line("Unknown role: " .. block.type)
+            session:add_debug_line(vim.inspect(block))
         end
     end
+
+    if not send_again then
+        session:add_debug_line("")
+    end
+
+    return send_again
 end
 
 
 function M.new(hostname, api_key, model_id)
     return function(session)
 
-        local result = make_request(hostname, api_key, model_id, session)
-        handle_response(session, result)
+        local send_again = true
+
+        while send_again do
+            local result = make_request(hostname, api_key, model_id, session)
+            send_again = handle_response(session, result)
+        end
 
         -- print(vim.inspect(result))
 

@@ -9,18 +9,6 @@ end
 M.__destructor = destructor
 
 
-local function apply_highlights()
-    vim.api.nvim_set_hl(0, "CodeHubUser", { fg = "#5ef1ff", bold = true })
-    vim.api.nvim_set_hl(0, "CodeHubAssistant", { fg = "#000000", bg = "#ff00ff", bold = true })
-    vim.api.nvim_set_hl(0, "CodeHubDetails", { fg = "#888888", italic = true })
-end
-
-vim.api.nvim_create_autocmd("ColorScheme", {
-    callback = apply_highlights
-})
-apply_highlights()
-
-
 local function create_buffer()
     local ns = vim.api.nvim_create_namespace("CodeHub")
 
@@ -115,6 +103,7 @@ function M:_write_message(role, message)
         user = "Function",
         assistant = "Normal",
         details = "Comment",
+        error = "Error",
     }
 
     vim.bo[self.buffer].modifiable = true
@@ -147,7 +136,21 @@ function M:_write_message(role, message)
 end
 
 
-function M:add_message(role, message)
+function M:add_debug_line(message)
+    self:_write_message("details", message)
+end
+
+
+function M:add_error_line(message)
+    self:_write_message("error", message)
+end
+
+
+function M:add_message(role, message, write_message)
+    if write_message == nil then
+        write_message = true
+    end
+
     local role_options = {
         user = true,
         assistant = true,
@@ -163,7 +166,20 @@ function M:add_message(role, message)
         content = message,
     })
 
-    self:_write_message(role, message)
+    if write_message then
+        self:_write_message(role, message)
+    end
+end
+
+
+function M:call_tool(name, inputs)
+    for _, tool in ipairs(self.tools) do
+        if tool.name == name then
+            return tool:execute(inputs)
+        end
+    end
+
+    return { type = "error", message = "Failed to find tool" }
 end
 
 

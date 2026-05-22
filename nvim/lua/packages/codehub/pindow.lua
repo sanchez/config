@@ -101,6 +101,10 @@ function M.new(title, ns, output_buf, callback)
 
     vim.keymap.set("n", "<Esc>", close, { buffer = input_buf, silent = true })
     vim.keymap.set("n", "<Esc>", close, { buffer = output_buf, silent = true })
+    vim.keymap.set("n", "i", function()
+        vim.api.nvim_set_current_win(input_win)
+        vim.cmd("startinsert")
+    end, { buffer = output_buf })
 
     return setmetatable({
         ns = ns,

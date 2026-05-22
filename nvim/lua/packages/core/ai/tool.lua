@@ -26,4 +26,17 @@ function M.new(opts)
 end
 
 
+function M:execute(inputs)
+    local success, result = pcall(function()
+        return self.callback(inputs)
+    end)
+
+    if success then
+        return result
+    else
+        return { type = "error", message = result }
+    end
+end
+
+
 return M

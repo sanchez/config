@@ -14,26 +14,17 @@ local Pindow = require("packages.codehub.pindow")
 local agent_provider = AnthropicProvider.new("https://opencode.ai", apiKey, "minimax-m2.7")
 local fast_provider = OpenAIProvider.new("https://opencode.ai", apiKey, "deepseek-v4-flash")
 
+
 local session = Session.new(agent_provider, {
     Tool.new({
         name = "get_time",
         description = "Use to get the current system time",
         inputs = {},
+        callback = function(inputs)
+            return os.date("%Y-%m-%d %H:%M:%S")
+        end
     })
 })
-
-
-local function format_token_number(num)
-    if num > 1e9 then
-        return string.format("%.2fb", num / 1e9)
-    elseif num > 1e6 then
-        return string.format("%.2fm", num / 1e6)
-    elseif num > 1e3 then
-        return string.format("%.2fk", num / 1e3)
-    end
-    return tostring(num)
-end
-
 
 
 -- TODO: I want to change this to be based on visual mode, if the user has lines selected then open the prompt window to provide a prompt
