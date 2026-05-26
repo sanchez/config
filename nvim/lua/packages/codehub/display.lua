@@ -7,6 +7,13 @@ M.__index = M
 function M.new(opts)
     local items = {}
 
+    local self = setmetatable({
+        items = items,
+        messages = {},
+        picker = picker,
+        is_rendering = false
+    }, M)
+
     local picker = Snacks.picker.pick({
         title = "CodeHub",
         show_empty = true,
@@ -49,35 +56,40 @@ function M.new(opts)
             return ret
         end,
         actions = {
-            toggle_expand = function(picker, item)
-                print(vim.inspect(item))
+            confirm = function(picker, item)
+                if item == nil then
+                    return
+                end
+
                 item.node.expanded = not item.node.expanded
-                picker:find() -- Refresh tree state
+                self:refresh()
             end
         },
         win = {
             input = {
                 keys = {
-                    ["<CR>"]  = "toggle_expand",
+                    -- ["<CR>"]  = { "toggle_expand", mode = {"i", "n" } },
                 },
             },
         },
     })
 
-    return setmetatable({
-        items = items,
-        messages = {},
-        picker = picker,
-        is_rendering = false
-    }, M)
+    self.picker = picker
+    return self
 end
 
 
 function M:refresh()
+    for i = #self.picker.list.items, 1, -1 do
+        self.picker.list.items[i] = nil
+    end
+
     self.picker.list.items = {}
     for _, x in ipairs(self.messages) do
         x:flatten(self.picker.list.items, 0)
     end
+
+    self.picker.list:update({ force = true })
 end
 
 
