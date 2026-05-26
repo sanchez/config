@@ -1,4 +1,4 @@
-theme = catppuccin-latte.conf
+theme = catppuccin-frappe.conf
 font-family = "Cascadia Code NF"
 window-padding-balance = true
 

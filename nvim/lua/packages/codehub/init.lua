@@ -26,9 +26,24 @@ local session = Session.new(agent_provider, {
     })
 })
 
+local agents = {
+    "Plan",
+    "Implement",
+}
+local agent_names = vim.tbl_map(function(x) return x end, agents)
+
+
+vim.keymap.set('n', '<leader>ca', function ()
+    vim.ui.select(agents, { prompt = "Select Agent:" }, function(choice)
+        if not choice then return end
+
+        print("Selected Agent: " .. choice)
+    end)
+end)
+
 
 -- TODO: I want to change this to be based on visual mode, if the user has lines selected then open the prompt window to provide a prompt
-vim.keymap.set('n', '<leader>c', function ()
+vim.keymap.set('n', '<leader>cc', function ()
     -- local model_ids = ai.list_models(apiKey)
 
     local pindow = Pindow.new("CodeHub", session.ns, session.buffer, function(input)
