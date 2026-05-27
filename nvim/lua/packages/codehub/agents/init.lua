@@ -2,7 +2,6 @@ local vars = require("packages.core.vars").get_vars()
 local api_key = vars["OPENCODE_API_KEY"]
 
 local tools = require("packages.codehub.tools")
-local history = require("packages.codehub.agents.history").new()
 local Agent = require("packages.codehub.agents.agent")
 
 local Providers = require("packages.codehub.providers")
@@ -18,6 +17,7 @@ local builder = Agent.new("Build", MiniMax, {
 })
 
 
+local history = require("packages.codehub.agents.history").new(builder.name)
 return {
     history = history,
     agents = { planner, research, builder },

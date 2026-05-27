@@ -30,26 +30,45 @@ local agents = require("packages.codehub.agents")
 -- })
 
 local agent_names = vim.tbl_map(function(x) return x.name end, agents.agents)
-
-
 vim.keymap.set('n', '<leader>ca', function ()
     Snacks.picker.select(agent_names, { prompt = "Select Agent" }, function(choice)
         if not choice then return end
-
-        print("Selected Agent: " .. choice)
+        agents.history.agent = choice
+        agents.history:_update_footer()
     end)
 end)
 
 
-vim.keymap.set("n", "<leader>cc", function()
-    local display = Display.new({
-        cb = function(text)
-            agents.history:add_user_message(text)
+local function get_selected_agent()
+    local name = agents.history.agent
+    for _, agent in ipairs(agents.agents) do
+        if agent.name == name then
+            return agent
         end
-    })
-    display:bind_display(display)
-    display:add_message("Hello World"):add_message("Nested")
-    display:add_message("Another One")
+    end
+    return nil
+end
+
+
+vim.keymap.set("n", "<leader>cc", function()
+    local pindow = Pindow.new("CodeHub", agents.history.ns, agents.history.buffer, function(input)
+        local agent = get_selected_agent()
+        if agent == nil then
+            agents.history:add_error_line("Unable to find agent: " .. agents.history.agent)
+            return
+        end
+
+        agents.history:add_message("user", input)
+        agent:execute(agents.history)
+    end)
+
+    -- local display = Display.new({
+    --     cb = function(text)
+    --         agents.history:add_user_message(text)
+    --     end
+    -- })
+    -- display:add_message("Hello World"):add_message("Nested")
+    -- display:add_message("Another One")
 end)
 
 

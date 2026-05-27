@@ -6,117 +6,90 @@ M.__index = M
 
 function M.new(opts)
     opts = opts or {}
-    local items = {}
 
     local self = setmetatable({
-        items = items,
-        messages = {},
-        picker = picker,
-        is_rendering = false
+        messages = {}
     }, M)
 
-    local picker = Snacks.picker.pick({
-        title = "CodeHub",
-        show_empty = true,
-        auto_close = false,
-        live = false,
-        focus = "input",
-        layout = {
-            layout = {
-                box = "vertical",
-                backdrop = false,
-                width = 64,
-                position = "right",
-
-                { win = "list", border = "rounded" },
-                { win = "input", height = 1, border = "rounded" },
-            },
-        },
-        matcher = { frecency = false, file = false },
-        preview = "none",
-        items = items,
-        filter = {
-            transform = function(picker, filter)
-                filter.pattern = ""
-                return false -- don't force a full refresh
-            end,
-        },
-        format = function(item, picker)
-            local ret = {}
-
-            -- Handle indentation
-            local indent = string.rep("  ", item.level or 0)
-            table.insert(ret, { indent, "SnacksPickerIndent" })
-
-            -- Handle tree icons
-            if #item.node.nodes > 0 then
-                local icon = item.node.expanded and " " or " "
-                local icon_hl = item.node.expanded and "SnacksPickerDirectory" or "Comment"
-                table.insert(ret, { icon, icon_hl })
-            else
-                table.insert(ret, { "  ", "NonText" })
-            end
-
-            -- Handle the text
-            table.insert(ret, { item.message, "SnacksPickerLabel" })
-
-            return ret
-        end,
-        actions = {
-            confirm = function(picker, item)
-                if item == nil then
-                    return
-                end
-
-                item.node.expanded = not item.node.expanded
-                self:refresh()
-            end,
-            search_confirm = function(picker)
-                local text = picker:filter().pattern
-
-                if opts.cb then
-                    opts.cb(text)
-                end
-
-                picker.input:set("")
-            end,
-        },
-        win = {
-            input = {
-                keys = {
-                    ["<CR>"] = { "search_confirm", mode = { "i", "n" } },
-                },
-            },
-        },
+    -- display window (read-only, shows messages)
+    self.display_win = Snacks.win({
+        show = false,
+        enter = false,
+        bo = { modifiable = false, buftype = "nofile" },
+        wo = { wrap = true },
     })
 
-    self.picker = picker
+    -- input window (prompt buffer, anchored below display)
+    self.input_win = Snacks.win({
+        show = false,
+        enter = true,
+        height = 1,
+        bo = { buftype = "nofile" },
+        on_win = function(win)
+            vim.keymap.set({ "i", "n" }, "<CR>", function()
+                local lines = vim.api.nvim_buf_get_lines(win.buf, 0, -1, false)
+                local text = table.concat(lines, "\n")
+                if text == "" then return end
+
+                vim.notify(text, "info")
+
+                vim.api.nvim_buf_set_lines(win.buf, 0, -1, false, { "" })
+            end, { buffer = win.buf })
+        end,
+    })
+
+    self.layout = Snacks.layout.new({
+        wins = {
+            display = self.display_win,
+            input = self.input_win,
+        },
+        layout = {
+            box = "vertical",
+            position = "right",
+            width = 64,
+            backdrop = false,
+
+            { win = "display", border = "rounded", title = "CodeHub" },
+            { win = "input", height = 1, border = "rounded" },
+        },
+        on_update = function()
+            if self.input_win:valid() and not self._focused then
+                self._focused = true
+                self.input_win:focus()
+                vim.api.nvim_win_call(self.input_win.win, function()
+                    vim.cmd("startinsert!")
+                end)
+            end
+        end,
+    })
+
     return self
 end
 
 
-function M:refresh()
-    for i = #self.picker.list.items, 1, -1 do
-        self.picker.list.items[i] = nil
+function M:render()
+    local lines = {}
+    for _, msg in ipairs(self.messages) do
+        msg:flatten(lines, 0)
     end
 
-    self.picker.list.items = {}
-    for _, x in ipairs(self.messages) do
-        x:flatten(self.picker.list.items, 0)
-    end
+    local text = vim.tbl_map(function(item)
+        return string.rep("  ", item.level or 0) .. (item.message or "")
+    end, lines)
 
-    self.picker.list:update({ force = true })
+    vim.bo[self.display_win.buf].modifiable = true
+    vim.api.nvim_buf_set_lines(self.display_win.buf, 0, -1, false, text)
+    vim.bo[self.display_win.buf].modifiable = false
 end
 
 
-function M:add_message(message)
+function M:add_messsage(message)
     local m = Message.new(message, function()
-        self:refresh()
+        self:render()
     end)
+
     table.insert(self.messages, m)
-
-    self:refresh()
-
+    self:render()
     return m
 end
 
