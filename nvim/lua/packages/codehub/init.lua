@@ -41,8 +41,13 @@ vim.keymap.set('n', '<leader>ca', function ()
 end)
 
 
-vim.keymap.set("n", "<leader>ct", function()
-    local display = Display.new()
+vim.keymap.set("n", "<leader>cc", function()
+    local display = Display.new({
+        cb = function(text)
+            agents.history:add_user_message(text)
+        end
+    })
+    display:bind_display(display)
     display:add_message("Hello World"):add_message("Nested")
     display:add_message("Another One")
 end)

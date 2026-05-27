@@ -63,11 +63,11 @@ local keybinds = {
     { "<leader>s/", Snacks.picker.search_history, "Search History" },
     { "<leader>sa", Snacks.picker.autocmds, "Autocmds" },
     { "<leader>sb", Snacks.picker.lines, "Buffer Lines" },
-    { "<leader>sc", Snacks.picker.command_history, "Command History" },
+    { "<leader>sh", Snacks.picker.command_history, "Command History" },
     { "<leader>sC", Snacks.picker.commands, "Commands" },
     { "<leader>sd", Snacks.picker.diagnostics, "Diagnostics" },
     { "<leader>sD", Snacks.picker.diagnostics_buffer, "Buffer Diagnostics" },
-    { "<leader>sh", Snacks.picker.help, "Help Pages" },
+    { "<leader>s?", Snacks.picker.help, "Help Pages" },
     { "<leader>sH", Snacks.picker.highlights, "Highlights" },
     { "<leader>si", Snacks.picker.icons, "Icons" },
     { "<leader>sj", Snacks.picker.jumps, "Jumps" },
@@ -79,7 +79,7 @@ local keybinds = {
     { "<leader>sq", Snacks.picker.qflist, "Quickfix List" },
     { "<leader>sR", Snacks.picker.resume, "Resume" },
     { "<leader>su", Snacks.picker.undo, "Undo History" },
-    { "<leader>uC", Snacks.picker.colorschemes, "Colorschemes" },
+    { "<leader>sc", Snacks.picker.colorschemes, "Colorschemes" },
 
     -- LSP
     { "gd", Snacks.picker.lsp_definitions, "Goto Definition" },

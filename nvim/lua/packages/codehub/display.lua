@@ -5,6 +5,7 @@ M.__index = M
 
 
 function M.new(opts)
+    opts = opts or {}
     local items = {}
 
     local self = setmetatable({
@@ -19,7 +20,7 @@ function M.new(opts)
         show_empty = true,
         auto_close = false,
         live = false,
-        focus = "list",
+        focus = "input",
         layout = {
             layout = {
                 box = "vertical",
@@ -34,6 +35,12 @@ function M.new(opts)
         matcher = { frecency = false, file = false },
         preview = "none",
         items = items,
+        filter = {
+            transform = function(picker, filter)
+                filter.pattern = ""
+                return false -- don't force a full refresh
+            end,
+        },
         format = function(item, picker)
             local ret = {}
 
@@ -63,7 +70,23 @@ function M.new(opts)
 
                 item.node.expanded = not item.node.expanded
                 self:refresh()
-            end
+            end,
+            search_confirm = function(picker)
+                local text = picker:filter().pattern
+
+                if opts.cb then
+                    opts.cb(text)
+                end
+
+                picker.input:set("")
+            end,
+        },
+        win = {
+            input = {
+                keys = {
+                    ["<CR>"] = { "search_confirm", mode = { "i", "n" } },
+                },
+            },
         },
     })
 
