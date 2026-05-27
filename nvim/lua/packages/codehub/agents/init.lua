@@ -11,10 +11,23 @@ local MiniMax = Providers.anthropic.new("https://opencode.ai", api_key, "minimax
 
 
 local planner = Agent.new("Plan", MiniMax, {})
-local research = Agent.new("Research", MiniMax, {})
+local research = Agent.new("Research", MiniMax, {
+    tools = {
+        tools.webfetch,
+        tools.websearch,
+    },
+})
 
 local builder = Agent.new("Build", MiniMax, {
-    tools = { tools.get_time },
+    tools = {
+        tools.get_time,
+        tools.read_file,
+        tools.write_file,
+        tools.edit_file,
+        tools.get_cwd,
+        tools.list_files,
+        tools.get_current_file,
+    },
 })
 
 

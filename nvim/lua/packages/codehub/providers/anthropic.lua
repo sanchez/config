@@ -6,7 +6,7 @@ M.__index = M
 
 
 local function call_tool(tools, name, inputs)
-    for _, tool in ipairs(tools) do
+    for _, tool in pairs(tools) do
         if tool.name == name then
             return tool:execute(inputs)
         end
@@ -33,7 +33,7 @@ end
 
 local function map_tools(tools)
     local ret = {}
-    for _, tool in ipairs(tools) do
+    for _, tool in pairs(tools) do
         local tool_definition = {
             name = tool.name,
             description = tool.description,
