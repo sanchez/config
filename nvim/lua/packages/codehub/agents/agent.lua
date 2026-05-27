@@ -27,14 +27,12 @@ end
 
 
 function M:execute(history)
-    async.exec(function()
-        history:set_status("Thinking...")
-        history:add_debug_line("Starting request...")
+    history:set_status("Thinking...")
+    history:add_debug_line("Starting request...")
 
-        self.provider(history, self.tools)
+    self.provider(history, self.tools)
 
-        history:set_status(nil)
-    end)
+    history:set_status(nil)
 end
 
 

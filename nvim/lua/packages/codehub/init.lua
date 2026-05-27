@@ -59,7 +59,10 @@ vim.keymap.set("n", "<leader>cc", function()
         end
 
         agents.history:add_message("user", input)
-        agent:execute(agents.history)
+        async.exec(function()
+            agent:execute(agents.history)
+            vim.notify("CodeHub has finished processing", "success")
+        end)
     end)
 
     -- local display = Display.new({

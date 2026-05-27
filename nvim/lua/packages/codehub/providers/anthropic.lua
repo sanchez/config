@@ -12,7 +12,7 @@ local function call_tool(tools, name, inputs)
         end
     end
 
-    return { type == "error", message = "Failed to find tool" }
+    return { type = "error", message = "Failed to find tool" }
 end
 
 
@@ -41,12 +41,12 @@ local function map_tools(tools)
 
         local properties = {}
         local required_properties = {}
-        for _, property in ipairs(tool.inputs) do
+        for _, property in ipairs(tool.inputs or {}) do
             properties[property.name] = {
-                type = property.name,
+                type = property.type,
                 description = property.description
             }
-            if property.is_reuqired then
+            if property.is_required then
                 table.insert(required_properties, property.name)
             end
         end
