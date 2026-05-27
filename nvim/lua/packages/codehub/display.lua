@@ -65,13 +65,6 @@ function M.new(opts)
                 self:refresh()
             end
         },
-        win = {
-            input = {
-                keys = {
-                    -- ["<CR>"]  = { "toggle_expand", mode = {"i", "n" } },
-                },
-            },
-        },
     })
 
     self.picker = picker

@@ -5,8 +5,10 @@ vim.pack.add({
     "https://github.com/saghen/blink.lib",
 
     -- todo
+    "https://github.com/nvim-lua/plenary.nvim",
     "https://github.com/folke/todo-comments.nvim",
 })
+
 
 local Snacks = require("snacks")
 Snacks.setup({
@@ -37,6 +39,7 @@ Snacks.setup({
         refresh = 50,
     },
 })
+require("todo-comments").setup({})
 
 vim.keymap.set("n", "<leader>ft", function()
     Snacks.explorer()
@@ -90,7 +93,7 @@ local keybinds = {
     { "<leader>sS", Snacks.picker.lsp_workspace_symbols, "LSP Workspace Symbols" },
 
     -- todo comments
-    { "<leader>st", Snacks.picker.todo_comments, "Todo" },
+    { "<leader>st", function() Snacks.picker.todo_comments() end, "Todo" },
 }
 
 for _, x in ipairs(keybinds) do

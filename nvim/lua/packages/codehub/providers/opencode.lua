@@ -1,4 +1,4 @@
-local web = require("packages.core.ai.core")
+local web = require("packages.codehub.providers.core")
 
 local M = {}
 M.__index = M
