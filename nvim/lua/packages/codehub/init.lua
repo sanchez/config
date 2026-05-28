@@ -12,7 +12,7 @@ vim.keymap.set('n', '<leader>ca', function ()
         agents.history.agent = choice
         agents.history:_update_footer()
     end)
-end)
+end, { desc = "Pick what Agent to use" })
 
 
 local function get_selected_agent()
@@ -53,7 +53,7 @@ vim.keymap.set("n", "<leader>cc", function()
     -- })
     -- display:add_message("Hello World"):add_message("Nested")
     -- display:add_message("Another One")
-end)
+end, { desc = "Opens CodeHub" })
 
 
 -- TODO: I want to change this to be based on visual mode, if the user has lines selected then open the prompt window to provide a prompt

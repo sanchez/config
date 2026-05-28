@@ -15,12 +15,7 @@ function M.create_request(method, url, headers, opts)
             table.insert(arguments, key .. ": " .. value)
         end
 
-        if opts.data then
-            table.insert(arguments, "-d")
-            table.insert(arguments, vim.fn.json_encode(opts.data))
-        end
-
-        vim.system(arguments, { text = true }, function(obj)
+        local function callback(obj)
             vim.schedule(function()
                 if obj.code == 0 then
                     done(obj.stdout)
@@ -29,7 +24,17 @@ function M.create_request(method, url, headers, opts)
                     done(nil)
                 end
             end)
-        end)
+        end
+
+        if opts.data then
+            table.insert(arguments, "-d")
+            table.insert(arguments, "@-")
+
+            local payload = vim.fn.json_encode(opts.data)
+            vim.system(arguments, { text = true, stdin = payload }, callback)
+        else
+            vim.system(arguments, { text = true }, callback)
+        end
     end)
 end
 

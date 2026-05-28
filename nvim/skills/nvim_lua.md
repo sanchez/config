@@ -1,3 +1,7 @@
+---
+description: "Documentation for how to code Lua inside nvim"
+---
+
 # Neovim Lua Guide
 
 Source: [Neovim Lua Documentation](https://neovim.io/doc/user/lua/)
