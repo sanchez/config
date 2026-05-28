@@ -71,7 +71,7 @@ function M:_update_footer()
     else
         status_message =
             "Agent: " .. self.agent ..
-            " Cost: $" .. self.total_cost ..
+            ", Cost: $" .. self.total_cost ..
             " I: " .. format_token_number(self.input_tokens) ..
             " O: " .. format_token_number(self.output_tokens)
     end
@@ -179,6 +179,21 @@ function M:add_costs(cost, input_tokens, output_tokens)
     self.total_cost = self.total_cost + cost
     self.input_tokens = self.input_tokens + input_tokens
     self.output_tokens = self.output_tokens + output_tokens
+
+    self:_update_footer()
+end
+
+
+function M:reset()
+    self.status = nil
+    self.total_cost = 0
+    self.input_tokens = 0
+    self.output_tokens = 0
+    self.history = {}
+
+    vim.api.nvim_set_option_value("modifiable", true, { buf = self.buffer })
+    vim.api.nvim_buf_set_lines(self.buffer, 0, -1, false, { "Welcome to CodeHub, please continue!" })
+    vim.api.nvim_set_option_value("modifiable", false, { buf = self.buffer })
 
     self:_update_footer()
 end

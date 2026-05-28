@@ -12,10 +12,9 @@
       "rev": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3",
       "src": "https://github.com/akinsho/bufferline.nvim"
     },
-    "coc.nvim": {
-      "rev": "a23e8e5c3a7ee77073862c98800948ef20a5e7e6",
-      "src": "https://github.com/neoclide/coc.nvim",
-      "version": "'release'"
+    "fidget.nvim": {
+      "rev": "82404b196e73a00b1727a91903beef5ddc319d22",
+      "src": "https://github.com/j-hui/fidget.nvim"
     },
     "friendly-snippets": {
       "rev": "6cd7280adead7f586db6fccbd15d2cac7e2188b9",

@@ -3,11 +3,14 @@ vim.pack.add({
     "https://github.com/nvim-tree/nvim-web-devicons",
     "https://github.com/folke/snacks.nvim",
     "https://github.com/saghen/blink.lib",
+    "https://github.com/j-hui/fidget.nvim",
 
     -- todo
     "https://github.com/nvim-lua/plenary.nvim",
     "https://github.com/folke/todo-comments.nvim",
 })
+
+require("fidget").setup({})
 
 
 local Snacks = require("snacks")
@@ -15,7 +18,7 @@ Snacks.setup({
     notifier = { enabled = true },
     explorer = { enabled = true },
     dashboard = {
-        enabled = true,
+        enabled = false,
         sections = {
             { section = "header" },
             { section = "keys", gap = 1, padding = 1 },
@@ -84,7 +87,7 @@ local keybinds = {
     -- LSP
     { "gd", Snacks.picker.lsp_definitions, "Goto Definition" },
     { "gD", Snacks.picker.lsp_declarations, "Goto Declaration" },
-    { "gr", Snacks.picker.lsp_references, "References" },
+    { "gr", function() Snacks.picker.lsp_references({ jump_single = false }) end, "References" },
     { "gI", Snacks.picker.lsp_implementations, "Goto Implementation" },
     { "gy", Snacks.picker.lsp_type_definitions, "Goto T[y]pe Definition" },
     { "gai", Snacks.picker.lsp_incoming_calls, "C[a]lls Incoming" },

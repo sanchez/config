@@ -52,12 +52,13 @@ local read_file = Tool.new({
         { name = "offset", description = "The line number to start reading from (optional)", type = "number", is_required = false },
         { name = "limit", description = "The maximum number of lines to read (optional)", type = "number", is_required = false },
     },
-    callback = function(inputs)
+    callback = function(history, inputs)
         if type(inputs) ~= "table" then
             return "Error: invalid inputs type"
         end
 
         local path = inputs.file_path
+        history:add_debug_line(" -> Reading file " .. path)
 
         local ok, err = validate_path(path)
         if not ok then
@@ -94,12 +95,13 @@ local write_file = Tool.new({
         { name = "file_path", description = "The absolute path to the file to write", type = "string", is_required = true },
         { name = "content", description = "The content to write to the file", type = "string", is_required = true },
     },
-    callback = function(inputs)
+    callback = function(history, inputs)
         if type(inputs) ~= "table" then
             return "Error: invalid inputs type"
         end
 
         local path = inputs.file_path
+        history:add_debug_line(" -> Writing file " .. path)
         local content = inputs.content
 
         if type(content) ~= "string" and type(content) ~= "number" then
@@ -130,12 +132,13 @@ local edit_file = Tool.new({
         { name = "old_string", description = "The text to replace", type = "string", is_required = true },
         { name = "new_string", description = "The text to replace it with", type = "string", is_required = true },
     },
-    callback = function(inputs)
+    callback = function(history, inputs)
         if type(inputs) ~= "table" then
             return "Error: invalid inputs type"
         end
 
         local path = inputs.file_path
+        history:add_debug_line(" -> Editing file " .. path)
 
         local ok, err = validate_path(path)
         if not ok then
@@ -188,8 +191,10 @@ local edit_file = Tool.new({
 
 local list_files = Tool.new({
     name = "list_files",
-    description = "Lists all files in a directory tree view. Optionally specify a root directory and max depth.",
-    callback = function()
+    description = "Lists all files the current directory.",
+    callback = function(history)
+        history:add_debug_line(" -> Listing out all files")
+
         local dir = vim.fn.getcwd()
 
         local ok, err = validate_path(dir)
@@ -205,8 +210,9 @@ local list_files = Tool.new({
             "find %s -not -path '*/.git/*' -not -name '.git' 2>/dev/null | sort",
             escaped
         )
-        print(vim.inspect(cmd))
-        return vim.fn.system(cmd)
+
+        local result = vim.fn.system(cmd)
+        return result
     end
 })
 
@@ -217,12 +223,13 @@ local delete_file = Tool.new({
     inputs = {
         { name = "file_path", description = "The absolute path to the file to delete", type = "string", is_required = true },
     },
-    callback = function(inputs)
+    callback = function(history, inputs)
         if type(inputs) ~= "table" then
             return "Error: invalid inputs type"
         end
 
         local path = inputs.file_path
+        history:add_debug_line(" -> Deleting file " .. path)
 
         if type(path) ~= "string" then
             return "Error: file_path must be a string"

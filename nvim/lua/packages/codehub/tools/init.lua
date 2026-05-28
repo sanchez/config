@@ -5,7 +5,7 @@ local get_time = Tool.new({
     name = "get_time",
     description = "Use to get the current system time",
     inputs = {},
-    callback = function(inputs)
+    callback = function()
         return os.date("%Y-%m-%d %H:%M:%S")
     end
 })
@@ -15,7 +15,8 @@ local get_cwd = Tool.new({
     name = "get_cwd",
     description = "Gets the current working directory",
     inputs = {},
-    callback = function(inputs)
+    callback = function(history)
+        history:add_debug_line(" -> Getting current working directory")
         return vim.fn.getcwd()
     end
 })
@@ -25,7 +26,9 @@ local get_current_file = Tool.new({
     name = "get_current_file",
     description = "Gets the file path of the currently opened buffer in Neovim",
     inputs = {},
-    callback = function(inputs)
+    callback = function(history)
+        history:add_debug_line(" -> Getting current open file")
+
         local bufname = vim.fn.expand("%:p")
         if bufname == "" then
             return "No file is currently open"

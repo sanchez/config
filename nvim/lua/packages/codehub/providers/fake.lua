@@ -17,7 +17,7 @@ end
 
 
 function M.new()
-    return function(history, tools)
+    return function(agent, history, tools)
         history:set_status("Thinking...")
 
         web.fake_request()

@@ -126,7 +126,9 @@ local websearch = Tool.new({
         { name = "exclude_domains", description = "Comma-separated list of domains to exclude", type = "string", is_required = false },
         { name = "max_age_hours", description = "Maximum age of cached content in hours (0=always livecrawl, -1=never livecrawl)", type = "number", is_required = false },
     },
-    callback = function(inputs)
+    callback = function(history, inputs)
+        history:add_debug_line(" -> Search the web for '" .. inputs.query .. "'")
+
         local params = {
             query = inputs.query,
             type = inputs.type or "auto",
@@ -162,7 +164,8 @@ local webfetch = Tool.new({
         { name = "url", description = "The URL to fetch content from", type = "string", is_required = true },
         { name = "max_age_hours", description = "Maximum age of cached content in hours (0=always livecrawl)", type = "number", is_required = false },
     },
-    callback = function(inputs)
+    callback = function(history, inputs)
+        history:add_debug_line(" -> Web Fetching " .. inputs.url)
         local params = {
             urls = { inputs.url },
             text = { maxCharacters = 20000 },

@@ -3,7 +3,7 @@ vim.pack.add({
     "https://github.com/nvim-lualine/lualine.nvim",
     "https://github.com/neovim/nvim-lspconfig",
     "https://github.com/lewis6991/gitsigns.nvim",
-    { src = "https://github.com/neoclide/coc.nvim", version = "release" },
+    -- { src = "https://github.com/neoclide/coc.nvim", version = "release" },
     "https://github.com/akinsho/bufferline.nvim",
     "https://github.com/rafamadriz/friendly-snippets",
     "https://github.com/saghen/blink.cmp",

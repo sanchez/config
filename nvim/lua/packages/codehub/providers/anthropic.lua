@@ -5,10 +5,10 @@ local M = {}
 M.__index = M
 
 
-local function call_tool(tools, name, inputs)
+local function call_tool(history, tools, name, inputs)
     for _, tool in pairs(tools) do
         if tool.name == name then
-            return tool:execute(inputs)
+            return tool:execute(history, inputs)
         end
     end
 
@@ -16,18 +16,24 @@ local function call_tool(tools, name, inputs)
 end
 
 
-local function get_session_messages(history)
-    return history.history
-
+local function get_session_messages(agent, history)
     -- local messages = {}
-    -- for _, message in ipairs(session.history) do
+    --
+    -- if agent.systemPrompt then
     --     table.insert(messages, {
-    --         role = message.role,
-    --         content = message.content,
+    --         role = "system",
+    --         content = agent.systemPrompt
     --     })
     -- end
     --
+    -- for _, message in ipairs(history.history) do
+    --     table.insert(messages, message)
+    -- end
+    --
+    -- print(vim.inspect(messages))
+    --
     -- return messages
+    return history.history
 end
 
 
@@ -66,9 +72,9 @@ local function map_tools(tools)
 end
 
 
-local function make_request(hostname, api_key, model_id, history, tools)
+local function make_request(hostname, api_key, model_id, agent, history, tools)
     local url = hostname .. "/zen/go/v1/messages"
-    local messages = get_session_messages(history)
+    local messages = get_session_messages(agent, history)
     tools = map_tools(tools)
 
     local result = web.create_json_request("POST", url, {
@@ -76,7 +82,7 @@ local function make_request(hostname, api_key, model_id, history, tools)
         ["x-api-key"] = api_key,
     }, {
         data = {
-            system = "You are a helpful assistant",
+            system = agent.systemPrompt,
             model = model_id,
             messages = messages,
             temperature = 1,
@@ -84,6 +90,9 @@ local function make_request(hostname, api_key, model_id, history, tools)
                 type = "adaptive",
             },
             tools = tools,
+            output_config = {
+                effort = "max",
+            },
         },
     })
 
@@ -114,18 +123,21 @@ local function handle_response(history, tools, response)
             -- We currently skip thinking blocks
             -- TODO: Add support for thinking blocks
             history:add_debug_line("Thinking: " .. block.thinking)
+            history:add_message("assistant", {{
+                type = "thinking",
+                signature = block.signature,
+                thinking = block.thinking,
+            }})
         elseif block.type == "text" then
             history:add_message("assistant", block.text)
         elseif block.type == "tool_use" then
-            history:add_debug_line("Calling Tool: " .. block.name)
+            history:set_status("Calling Tool " .. block.name .. "...")
             history:add_message("assistant", { block }, false)
 
-            local result = call_tool(tools, block.name, block.input)
+            local result = call_tool(history, tools, block.name, block.input)
             if type(result) == "table" then
                 result = vim.fn.json_encode(result)
             end
-
-            history:add_debug_line("Tool Result: " .. result)
 
             history:add_message("user", {{
                 type = "tool_result",
@@ -146,12 +158,12 @@ end
 
 
 function M.new(hostname, api_key, model_id)
-    return function(history, tools)
+    return function(agent, history, tools)
 
         local send_again = true
 
         while send_again do
-            local result = make_request(hostname, api_key, model_id, history, tools)
+            local result = make_request(hostname, api_key, model_id, agent, history, tools)
             send_again = handle_response(history, tools, result)
         end
 

@@ -26,14 +26,20 @@ function M.new(opts)
 end
 
 
-function M:execute(inputs)
+function M:execute(history, inputs)
     local success, result = pcall(function()
-        return self.callback(inputs)
+        return self.callback(history, inputs)
     end)
 
     if success then
         return result
     else
+        local str_result = result
+        if type(str_result) ~= "string" then
+            str_result = vim.inspect(str_result)
+        end
+
+        history:add_error_line(str_result)
         return { type = "error", message = result }
     end
 end
