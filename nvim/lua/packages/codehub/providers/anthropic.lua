@@ -103,6 +103,7 @@ local function make_request(hostname, api_key, model_id, agent, history, tools)
     if result.error then
         -- There was an error in the endpoint, need to throw it so it doesn't go silently
         if result.error.message then
+            print(vim.inspect(result.error))
             error(result.error.message)
         else
             error(vim.inspect(result.error))
@@ -120,8 +121,6 @@ local function handle_response(history, tools, response)
 
     for i, block in ipairs(response.content) do
         if block.type == "thinking" then
-            -- We currently skip thinking blocks
-            -- TODO: Add support for thinking blocks
             history:add_debug_line("Thinking: " .. block.thinking)
             history:add_message("assistant", {{
                 type = "thinking",
@@ -163,6 +162,7 @@ function M.new(hostname, api_key, model_id)
         local send_again = true
 
         while send_again do
+            history:set_status("Thinking")
             local result = make_request(hostname, api_key, model_id, agent, history, tools)
             send_again = handle_response(history, tools, result)
         end

@@ -1,10 +1,15 @@
+--- Popup window for single-line text input with cursor-relative positioning.
+--- Used for quick command entry with Enter to submit and Esc to cancel.
 local M = {}
 M.__index = M
 
 local Window = require("packages.core.window")
 
+--- Constructor. Creates a cursor-anchored single-line input window.
+---@param opts table|nil Config options
+---@param opts.on_submit function Callback receiving input text on Enter
+---@return table New PromptPopup instance
 function M.new(opts)
-    opts = opts or {}
 
     local on_submit = opts.on_submit
 

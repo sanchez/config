@@ -67,7 +67,7 @@ function M:_update_footer()
 
     local status_message = "Unknown..."
     if self.status then
-        status_message = self.status
+        status_message = "Agent: " .. self.agent .. ", " .. self.status
     else
         status_message =
             "Agent: " .. self.agent ..
