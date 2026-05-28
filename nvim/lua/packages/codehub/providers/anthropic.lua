@@ -4,6 +4,12 @@ local web = require("packages.codehub.providers.core")
 local M = {}
 M.__index = M
 
+local MAX_RETRIES = 3
+local RETRY_DELAY_MS = 1000
+
+local function delay_ms(ms)
+    vim.wait(ms, function() return false end, 20, true)
+end
 
 local function call_tool(history, tools, name, inputs)
     for _, tool in pairs(tools) do
@@ -101,10 +107,12 @@ local function make_request(hostname, api_key, model_id, agent, history, tools)
     end
 
     if result.error then
-        -- There was an error in the endpoint, need to throw it so it doesn't go silently
         if result.error.message then
-            print(vim.inspect(result.error))
-            error(result.error.message)
+            if result.error.message == "Internal server error" then
+                return nil, "Internal server error"
+            else
+                error(result.error.message)
+            end
         else
             error(vim.inspect(result.error))
         end
@@ -163,11 +171,23 @@ function M.new(hostname, api_key, model_id)
 
         while send_again do
             history:set_status("Thinking")
-            local result = make_request(hostname, api_key, model_id, agent, history, tools)
+
+            local retries = 0
+            local result, err = make_request(hostname, api_key, model_id, agent, history, tools)
+
+            while err and retries < MAX_RETRIES do
+                retries = retries + 1
+                history:set_status("Retrying request (" .. retries .. "/" .. MAX_RETRIES .. ")...")
+                delay_ms(RETRY_DELAY_MS * retries)
+                result, err = make_request(hostname, api_key, model_id, agent, history, tools)
+            end
+
+            if err then
+                error(err)
+            end
+
             send_again = handle_response(history, tools, result)
         end
-
-        -- print(vim.inspect(result))
 
     end
 end
