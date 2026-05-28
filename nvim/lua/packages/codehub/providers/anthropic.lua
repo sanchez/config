@@ -114,13 +114,11 @@ local function handle_response(history, tools, response)
             -- We currently skip thinking blocks
             -- TODO: Add support for thinking blocks
             history:add_debug_line("Thinking: " .. block.thinking)
-            history:add_debug_line("")
         elseif block.type == "text" then
             history:add_message("assistant", block.text)
         elseif block.type == "tool_use" then
             history:add_debug_line("Calling Tool: " .. block.name)
             history:add_message("assistant", { block }, false)
-            history:add_debug_line(vim.inspect(block))
 
             local result = call_tool(tools, block.name, block.input)
             if type(result) == "table" then

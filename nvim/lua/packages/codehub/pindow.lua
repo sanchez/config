@@ -58,7 +58,7 @@ function M.new(title, ns, output_buf, callback)
     local ns = vim.api.nvim_create_namespace("CodeHub_Pindow")
 
     local total_lines = vim.o.lines - vim.o.cmdheight
-    local sidebar_width = math.max(56, math.floor(vim.o.columns * 0.25))
+    local sidebar_width = math.max(74, math.floor(vim.o.columns * 0.25))
     local input_height = 1
     local gap = 0
     local output_height = total_lines - input_height - 2
