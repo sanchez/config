@@ -10,9 +10,14 @@ local MiniMax = Providers.anthropic.new("https://opencode.ai", api_key, "minimax
 -- local DeepSeek = Providers.openai.new("https://opencode.ai", api_key, "deepseek-v4-flash")
 
 
-local planner = Agent.new("Plan", MiniMax, {})
+local planner = Agent.new("Plan", MiniMax, {
+    tools = {
+        tools.load_skill,
+    }
+})
 local research = Agent.new("Research", MiniMax, {
     tools = {
+        tools.load_skill,
         tools.webfetch,
         tools.websearch,
     },
@@ -20,6 +25,7 @@ local research = Agent.new("Research", MiniMax, {
 
 local builder = Agent.new("Build", MiniMax, {
     tools = {
+        tools.load_skill,
         tools.get_time,
         tools.read_file,
         tools.write_file,

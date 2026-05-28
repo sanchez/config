@@ -1,4 +1,5 @@
 local async = require("packages.core.async")
+local skills = require("packages.codehub.tools.skills")
 
 local M = {}
 M.__index = M
@@ -13,12 +14,29 @@ end
 function M.new(name, provider, opts)
     opts = opts or {}
 
-    local agentFile = agentsDir .. "/" .. name:lower() .. ".md"
-    local systemPrompt = nil
+    local systemPrompt = ""
+
+    -- Loads the agent system instructions from the root dir if it exists
     pcall(function()
+        local agentFile = agentsDir .. "/" .. name:lower() .. ".md"
         local systemPromptLines = vim.fn.readfile(agentFile)
-        systemPrompt = table.concat(systemPromptLines, "\n")
+        systemPrompt = systemPrompt .. table.concat(systemPromptLines, "\n")
     end)
+
+    -- Loads a top level AGENTS.md if it exists
+    pcall(function()
+        local agentFile = vim.fn.getcwd() .. "/AGENTS.md"
+        local systemPromptLines = vim.fn.readfile(agentFile)
+        systemPrompt = systemPrompt .. table.concat(systemPromptLines, "\n")
+    end)
+
+    -- Add skills into the instructions
+    if skills.skills then
+        systemPrompt = systemPrompt .. "\n\n# Skills\nThe below skills are available for use with the `load_skill` tool:\n"
+        for skill_name, skill in pairs(skills.skills) do
+            systemPrompt = systemPrompt .. "- **" .. skill_name .. ":** " .. skill.description .. "\n"
+        end
+    end
 
     return setmetatable({
         name = name,

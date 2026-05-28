@@ -8,9 +8,16 @@ vim.pack.add({
     -- todo
     "https://github.com/nvim-lua/plenary.nvim",
     "https://github.com/folke/todo-comments.nvim",
+
+    "https://github.com/folke/flash.nvim",
 })
 
 require("fidget").setup({})
+
+require("flash").setup({})
+vim.keymap.set({ "n", "x", "o" }, "f", function() require("flash").jump() end, { desc = "Flash" })
+vim.keymap.set({ "n", "x", "o" }, "F", function() require("flash").treesitter() end, { desc = "Flash Treesitter" })
+vim.keymap.set("c", "<c-s>", function() require("flash").toggle() end, { desc = "Toggle Flash Search" })
 
 
 local Snacks = require("snacks")
