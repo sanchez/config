@@ -1,3 +1,5 @@
+local async = require("packages.core.async")
+
 local M = {}
 M.__index = M
 
@@ -19,10 +21,20 @@ function M:call_tool(name, inputs)
             return tool:execute(inputs)
         end
     end
+
+    return { type = "error", message = "Failed to find tool" }
 end
 
 
 function M:execute(history)
+    async.exec(function()
+        history:set_status("Thinking...")
+        history:add_debug_line("Starting request...")
+
+        self.provider(history, self.tools)
+
+        history:set_status(nil)
+    end)
 end
 
 

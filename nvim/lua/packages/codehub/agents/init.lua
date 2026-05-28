@@ -5,6 +5,7 @@ local tools = require("packages.codehub.tools")
 local Agent = require("packages.codehub.agents.agent")
 
 local Providers = require("packages.codehub.providers")
+-- local FakeAI = Providers.fake.new()
 local MiniMax = Providers.anthropic.new("https://opencode.ai", api_key, "minimax-m2.7")
 -- local DeepSeek = Providers.openai.new("https://opencode.ai", api_key, "deepseek-v4-flash")
 

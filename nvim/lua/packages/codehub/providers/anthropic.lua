@@ -5,8 +5,19 @@ local M = {}
 M.__index = M
 
 
-local function get_session_messages(session)
-    return session.history
+local function call_tool(tools, name, inputs)
+    for _, tool in ipairs(tools) do
+        if tool.name == name then
+            return tool:execute(inputs)
+        end
+    end
+
+    return { type == "error", message = "Failed to find tool" }
+end
+
+
+local function get_session_messages(history)
+    return history.history
 
     -- local messages = {}
     -- for _, message in ipairs(session.history) do
@@ -20,9 +31,9 @@ local function get_session_messages(session)
 end
 
 
-local function get_session_tools(session)
-    local tools = {}
-    for _, tool in ipairs(session.tools) do
+local function map_tools(tools)
+    local ret = {}
+    for _, tool in ipairs(tools) do
         local tool_definition = {
             name = tool.name,
             description = tool.description,
@@ -48,17 +59,17 @@ local function get_session_tools(session)
             }
         end
 
-        table.insert(tools, tool_definition)
+        table.insert(ret, tool_definition)
     end
 
-    return tools
+    return ret
 end
 
 
-local function make_request(hostname, api_key, model_id, session)
+local function make_request(hostname, api_key, model_id, history, tools)
     local url = hostname .. "/zen/go/v1/messages"
-    local messages = get_session_messages(session)
-    local tools = get_session_tools(session)
+    local messages = get_session_messages(history)
+    tools = map_tools(tools)
 
     local result = web.create_json_request("POST", url, {
         ["Content-Type"] = "application/json",
@@ -93,8 +104,8 @@ local function make_request(hostname, api_key, model_id, session)
 end
 
 
-local function handle_response(session, response)
-    session:add_costs(response.cost, response.usage.input_tokens, response.usage.output_tokens)
+local function handle_response(history, tools, response)
+    history:add_costs(response.cost, response.usage.input_tokens, response.usage.output_tokens)
 
     local send_again = false
 
@@ -102,23 +113,23 @@ local function handle_response(session, response)
         if block.type == "thinking" then
             -- We currently skip thinking blocks
             -- TODO: Add support for thinking blocks
-            session:add_debug_line("Thinking: " .. block.thinking)
-            session:add_debug_line("")
+            history:add_debug_line("Thinking: " .. block.thinking)
+            history:add_debug_line("")
         elseif block.type == "text" then
-            session:add_message("assistant", block.text)
+            history:add_message("assistant", block.text)
         elseif block.type == "tool_use" then
-            session:add_debug_line("Calling Tool: " .. block.name)
-            session:add_message("assistant", { block }, false)
-            session:add_debug_line(vim.inspect(block))
+            history:add_debug_line("Calling Tool: " .. block.name)
+            history:add_message("assistant", { block }, false)
+            history:add_debug_line(vim.inspect(block))
 
-            local result = session:call_tool(block.name, block.input)
+            local result = call_tool(tools, block.name, block.input)
             if type(result) == "table" then
                 result = vim.fn.json_encode(result)
             end
 
-            session:add_debug_line("Tool Result: " .. result)
+            history:add_debug_line("Tool Result: " .. result)
 
-            session:add_message("user", {{
+            history:add_message("user", {{
                 type = "tool_result",
                 tool_use_id = block.id,
                 content = result
@@ -127,13 +138,9 @@ local function handle_response(session, response)
             send_again = true
 
         else
-            session:add_error_line("Unknown role: " .. block.type)
-            session:add_debug_line(vim.inspect(block))
+            history:add_error_line("Unknown role: " .. block.type)
+            history:add_debug_line(vim.inspect(block))
         end
-    end
-
-    if not send_again then
-        session:add_debug_line("")
     end
 
     return send_again
@@ -141,13 +148,13 @@ end
 
 
 function M.new(hostname, api_key, model_id)
-    return function(session)
+    return function(history, tools)
 
         local send_again = true
 
         while send_again do
-            local result = make_request(hostname, api_key, model_id, session)
-            send_again = handle_response(session, result)
+            local result = make_request(hostname, api_key, model_id, history, tools)
+            send_again = handle_response(history, tools, result)
         end
 
         -- print(vim.inspect(result))

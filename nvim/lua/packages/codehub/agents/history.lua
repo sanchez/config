@@ -17,7 +17,7 @@ local function create_buffer()
     vim.api.nvim_set_option_value("buftype", "nofile", { buf = buffer })
     vim.api.nvim_set_option_value("bufhidden", "hide", { buf = buffer })
 
-    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { "Welcome to CodeHub, more details to come!", "" })
+    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { "Welcome to CodeHub, more details to come!" })
     vim.api.nvim_buf_set_extmark(buffer, ns, 0, 0, {
         line_hl_group = "Comment",
     })
@@ -108,6 +108,11 @@ function M:_write_message(role, message)
     local row = vim.api.nvim_buf_line_count(self.buffer)
 
     local messages = {}
+
+    if role == "user" then
+        table.insert(messages, "")
+    end
+
     for line in (message .. "\n"):gmatch("(.-)\n") do
         table.insert(messages, line)
     end
@@ -167,12 +172,15 @@ end
 
 function M:set_status(status)
     self.status = status
+    self:_update_footer()
 end
 
 function M:add_costs(cost, input_tokens, output_tokens)
     self.total_cost = self.total_cost + cost
     self.input_tokens = self.input_tokens + input_tokens
     self.output_tokens = self.output_tokens + output_tokens
+
+    self:_update_footer()
 end
 
 

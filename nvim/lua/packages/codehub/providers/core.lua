@@ -49,4 +49,13 @@ function M.create_json_request(method, url, headers, opts)
 end
 
 
+function M.fake_request()
+    return await(function(done)
+        vim.defer_fn(function()
+            done(true)
+        end, 1000)
+    end)
+end
+
+
 return M
