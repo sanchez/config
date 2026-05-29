@@ -1,6 +1,12 @@
+--- File operation tools: read, write, edit, delete, list.
+--- All paths validated against cwd is_path_allowed()
 local Tool = require("packages.codehub.tools.tool")
 
 
+--- Security: prevents agent from accessing files outside nvim cwd.
+--- Resolves symlinks to catch path traversal attempts.
+---@param path string Relative or absolute path
+---@return boolean, string|nil Allowed + error on failure
 local function is_path_allowed(path)
     if type(path) ~= "string" then
         return false, "Access denied: invalid path type"
@@ -35,7 +41,9 @@ local function is_path_allowed(path)
     return false, "Access denied: path is outside the current nvim directory"
 end
 
--- Check path and extract error message helper
+--- Validates path and returns err tuple. Fail-fast helper for tool callbacks.
+---@param path string Path to validate
+---@return boolean, string|nil Allowed + error message
 local function validate_path(path)
     if not is_path_allowed(path) then
         return false, "Access denied: path is outside the current nvim directory"
@@ -44,6 +52,8 @@ local function validate_path(path)
 end
 
 
+--- Reads file contents. Supports offset + limit for partial reads.
+---@type Tool
 local read_file = Tool.new({
     name = "read_file",
     description = "Reads a file from the local filesystem and returns its contents",
@@ -88,6 +98,8 @@ local read_file = Tool.new({
 })
 
 
+--- Writes or creates file. Overwrites existing content entirely.
+---@type Tool
 local write_file = Tool.new({
     name = "write_file",
     description = "Writes or creates a file at the given path with the given content",
@@ -124,6 +136,9 @@ local write_file = Tool.new({
 })
 
 
+--- Replaces one occurrence of old_string with new_string.
+--- Errors if old_string missing or matchs multiple times.
+---@type Tool
 local edit_file = Tool.new({
     name = "edit_file",
     description = "Applies a partial edit to a file by replacing old_string with new_string. The old_string must match exactly one occurrence in the file.",
@@ -189,6 +204,8 @@ local edit_file = Tool.new({
 })
 
 
+--- Recursively lists all files under cwd (excludes .git).
+---@type Tool
 local list_files = Tool.new({
     name = "list_files",
     description = "Lists all files the current directory.",
@@ -217,6 +234,8 @@ local list_files = Tool.new({
 })
 
 
+--- Deletes a file by path. Errors if file doesn't exist or is protected.
+---@type Tool
 local delete_file = Tool.new({
     name = "delete_file",
     description = "Deletes a file from the local filesystem",

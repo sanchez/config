@@ -1,3 +1,5 @@
+--- Session history with buffer rendering. Tracks messages, tokens, costs.
+--- Writes to both history array (for API) and buffer (for display).
 local M = {}
 M.__index = M
 
@@ -50,6 +52,7 @@ function M.new(default_agent)
 end
 
 
+--- Abbreviates large numbers: >1M shows "X.XXm", >1K shows "X.XXk", else raw number.
 local function format_token_number(num)
     if num > 1e9 then
         return string.format("%.2fb", num / 1e9)
@@ -93,6 +96,9 @@ function M:_update_footer()
 end
 
 
+--- Writes role-colored message lines to buffer, updates footer, scrolls to bottom.
+---@param role "user"|"assistant"|"details"|"error" Role determines highlight group
+---@param message string Content to write
 function M:_write_message(role, message)
     if role == "system" then return end
 
@@ -138,16 +144,22 @@ function M:_write_message(role, message)
 end
 
 
+--- Appends debug/detail message (grey text). Writes to history array + buffer.
 function M:add_debug_line(message)
     self:_write_message("details", message)
 end
 
 
+--- Appends error message (red text). Writes to history array + buffer.
 function M:add_error_line(message)
     self:_write_message("error", message)
 end
 
 
+--- Adds message to history array + buffer. Validates role, auto-scrolls buffer.
+---@param role "user"|"assistant"|"system" API role
+---@param message string|table Content or tool result block
+---@param write_buffer boolean|nil Whether to render to display buffer (default true)
 function M:add_message(role, message)
     local role_options = {
         user = true,

@@ -1,14 +1,21 @@
+--- Web search and fetch via Exa API. Enables agents to browse the internet.
 local Tool = require("packages.codehub.tools.tool")
 local await = require("packages.core.async").await
 local vars = require("packages.core.vars")
 
 local API_BASE = "https://api.exa.ai"
 
+--- Reads EXA_API_KEY from .env first, falls back to environment variable.
+---@return string|nil API key or nil if not set
 local function get_api_key()
     local env_vars = vars.get_vars()
     return env_vars["EXA_API_KEY"] or os.getenv("EXA_API_KEY")
 end
 
+--- Fires async POST to Exa endpoint with API key header.
+---@param endpoint string API path (e.g. "/search")
+---@param params table Request body params
+---@return table|string Parsed JSON response or error string
 local function exa_api(endpoint, params)
     local api_key = get_api_key()
     if not api_key then
@@ -51,6 +58,9 @@ local function exa_api(endpoint, params)
     return decoded
 end
 
+--- Splits comma-separated string into trimmed array. Strips empty entries.
+---@param str string|nil CSV string
+---@return string[]|nil Array of non-empty trimmed strings
 local function split_csv(str)
     if not str or str == "" then
         return nil
@@ -68,6 +78,9 @@ local function split_csv(str)
     return result
 end
 
+--- Formats search result list: numbered titles + URLs + highlights + date.
+---@param result table|string API result or error string
+---@return string Formatted multi-line result summary
 local function format_search_results(result)
     if type(result) == "string" then
         return result
@@ -94,6 +107,9 @@ local function format_search_results(result)
     return table.concat(lines, "\n")
 end
 
+--- Formats single URL fetch result: best text available or highlights.
+---@param result table|string API result or error string
+---@return string Extracted text content
 local function format_fetch_result(result)
     if type(result) == "string" then
         return result
@@ -115,16 +131,18 @@ local function format_fetch_result(result)
     return vim.inspect(r)
 end
 
+--- Web search tool. Returns results with URLs, titles, highlights.
+---@type Tool
 local websearch = Tool.new({
     name = "websearch",
     description = "Performs a web search using the Exa API. Returns results with URLs, titles, and highlights.",
     inputs = {
-        { name = "query", description = "The search query string", type = "string", is_required = true },
-        { name = "type", description = "Search type: auto (default), fast, instant, deep-lite, deep, deep-reasoning", type = "string", is_required = false },
-        { name = "num_results", description = "Number of results to return (default 10, max 25)", type = "number", is_required = false },
-        { name = "include_domains", description = "Comma-separated list of domains to restrict results to", type = "string", is_required = false },
-        { name = "exclude_domains", description = "Comma-separated list of domains to exclude", type = "string", is_required = false },
-        { name = "max_age_hours", description = "Maximum age of cached content in hours (0=always livecrawl, -1=never livecrawl)", type = "number", is_required = false },
+        Tool.create_input("query", "The search query string", "string", true),
+        Tool.create_input("type", "Search type: auto, fast, instant, deep-lite, deep, deep-reasoning", "string", false),
+        Tool.create_input("num_results", "Number of results to return (default 10, max 25)", "number", false),
+        Tool.create_input("include_domains", "Comma-separated domains to restrict results to", "string", false),
+        Tool.create_input("exclude_domains", "Comma-separated domains to exclude", "string", false),
+        Tool.create_input("max_age_hours", "Max age of cached content in hours (0=live, -1=never livecrawl)", "number", false),
     },
     callback = function(history, inputs)
         history:add_debug_line(" -> Search the web for '" .. inputs.query .. "'")
@@ -157,12 +175,14 @@ local websearch = Tool.new({
     end
 })
 
+--- Fetches and extracts clean text from a URL.
+---@type Tool
 local webfetch = Tool.new({
     name = "webfetch",
     description = "Fetches and extracts clean text content from a URL using the Exa API.",
     inputs = {
-        { name = "url", description = "The URL to fetch content from", type = "string", is_required = true },
-        { name = "max_age_hours", description = "Maximum age of cached content in hours (0=always livecrawl)", type = "number", is_required = false },
+        Tool.create_input("url", "The URL to fetch content from", "string", true),
+        Tool.create_input("max_age_hours", "Max age of cached content in hours (0=live crawl)", "number", false),
     },
     callback = function(history, inputs)
         history:add_debug_line(" -> Web Fetching " .. inputs.url)

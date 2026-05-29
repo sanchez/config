@@ -1,7 +1,15 @@
+--- Skill loading from Markdown files with YAML frontmatter
+--- Enables agents to invoke resuable capability docs via load_skill tool.
 local Tool = require("packages.codehub.tools.tool")
 
+--- Loaded skills registry. Key = skill name (filename without .md).
+--- Value = { description, content }.
 local skills = {}
 
+--- Parses Markdown with optional YAML frontmatter (--- delimiters).
+--- Returns frontmatter table and body content.
+---@param content string Raw file content
+---@return table, string Frontmatter dict + body text
 local function parse_markdown_with_frontmatter(content)
     local frontmatter_str, body = content:match("^%-%-%-\n(.-)\n%-%-%-\n(.*)")
 
@@ -22,6 +30,11 @@ local function parse_markdown_with_frontmatter(content)
     return frontmatter_table, body
 end
 
+
+--- Loads a single .md skill files into the skills registry.
+--- Reads frontmatter (name/description) and body (content).
+---@param name string Filename (must end in .md)
+---@param path string Full path to file
 local function import_skill(name, path)
     if name:sub(-3) ~= ".md" then return end
     name = name:sub(1, -4)
@@ -37,11 +50,15 @@ local function import_skill(name, path)
     }
 end
 
+
+--- Directories scanned for skills on startup
 local skills_dirs = {
     vim.fn.stdpath("config") .. "/skills",
     vim.fn.getcwd() .. "/skills",
 }
 
+
+--- Scan skills_dirs and import all .md files.
 for _, path in ipairs(skills_dirs) do
     pcall(function()
         local files = vim.fn.readdir(path)
@@ -52,6 +69,8 @@ for _, path in ipairs(skills_dirs) do
 end
 
 
+--- Tool: returns skill content for the agent. Triggers load_skill callback
+---@type Tool
 local load_skill = Tool.new({
     name = "load_skill",
     description = "Load the provided skill",

@@ -1,9 +1,14 @@
+--- Snacks-based display with collapsible message tree.
+--- Layout: right-pinned vertical with display window + single-line input below.
+--- Note: unused in current CodeHub flow (replaced by Pindow + history buffer).
 local Message = require("packages.codehub.message")
 
 local M = {}
 M.__index = M
 
-
+--- Constructor. Creates display + input windows via Snacks, arranges via layout.
+---@param opts table|nil Config options (currently unused)
+---@return table Display instance
 function M.new(opts)
     opts = opts or {}
 
@@ -66,7 +71,8 @@ function M.new(opts)
     return self
 end
 
-
+--- Re-renders all messages to display buffer as indented lines.
+--- Flattens tree structure into flat text with depth-based indentation.
 function M:render()
     local lines = {}
     for _, msg in ipairs(self.messages) do
@@ -82,7 +88,10 @@ function M:render()
     vim.bo[self.display_win.buf].modifiable = false
 end
 
-
+--- Appends a message node to the tree, triggers re-render.
+--- Note: typo in method name ("add_messsage" not "add_message").
+---@param message string Display text
+---@return Message New Message node
 function M:add_messsage(message)
     local m = Message.new(message, function()
         self:render()

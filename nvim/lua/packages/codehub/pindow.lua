@@ -1,7 +1,9 @@
+--- Popup window for CodeHub interaction. Right sidebar with input + output panes.
+--- Holds input prompt (3 lines) and output buffer (remaining space).
 local M = {}
 M.__index = M
 
-
+--- Validity checks for Neovim window/buffer objects. Stale refs become invalid.
 local function win_is_valid(win)
     return win and vim.api.nvim_win_is_valid(win)
 end
@@ -10,6 +12,7 @@ local function buf_is_valid(buf)
     return buf and vim.api.nvim_buf_is_valid(buf)
 end
 
+--- Creates a nofile buffer with empty line for cursor. Input-only, no swap.
 local function create_buffers()
     local input_buf = vim.api.nvim_create_buf(false, true)
     vim.bo[input_buf].buftype = "nofile"
@@ -23,6 +26,12 @@ local function create_buffers()
 end
 
 
+--- Creates right-pinned split windows. Output window = sidebar; input window = bottom 3 lines.
+---@param ns integer Namespace for syntax highlighting
+---@param sidebar_width integer Column count for right split
+---@param input_buf integer Buffer for input pane
+---@param output_buf integer Buffer for output pane
+---@return integer, integer Window IDs for input and output
 local function create_windows(ns, sidebar_width, input_buf, output_buf)
     -- Right pinned vertical split
     vim.cmd("botright vertical " .. sidebar_width .. "split")
@@ -54,6 +63,12 @@ local function create_windows(ns, sidebar_width, input_buf, output_buf)
 end
 
 
+--- Constructor. Opens right sidebar + input prompt. ESC to close, Enter to submit.
+---@param title string Window title (unused historically)
+---@param ns integer Namespace handle (ignored, new ns created)
+---@param output_buf integer Buffer for output display
+---@param callback function(text) Called with input text on Enter
+---@return table Pindow instance
 function M.new(title, ns, output_buf, callback)
     local ns = vim.api.nvim_create_namespace("CodeHub_Pindow")
 
@@ -130,6 +145,8 @@ function M:close()
     end
 end
 
+--- Writes lines to output buffer. Clears existing namespace highlights.
+---@param lines string[] Lines to display
 function M:render(lines)
     if not buf_is_valid(self.output_buf) then
         return

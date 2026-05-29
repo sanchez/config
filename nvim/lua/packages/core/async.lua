@@ -40,6 +40,7 @@ local function await(...)
 end
 
 ---@param callback fun(await: fun(done: fun(any...)))
+--- Wraps callback in coroutine. Callback receives await fn; call it to yield until done.
 local function exec(callback)
     local co = coroutine.create(function()
         callback(await)

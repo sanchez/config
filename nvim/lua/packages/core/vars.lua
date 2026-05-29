@@ -1,8 +1,12 @@
+--- Loads and parses .env file. Supports KEY=VALUE, quoted values, comments (#).
 local M = {}
 M.__index = M
 
 -- local loadedConfig = nil
 
+--- Reads .env from nvim config dir, parses into key-value table.
+--- Strips whitespace, skips blanks and # comments, handles quoted values.
+---@return table Key-value dict of environment variables
 local function loadConfig()
     local currentConfig = {}
 
@@ -26,16 +30,13 @@ local function loadConfig()
                 currentConfig[key] = value
             end
         end
-
-
-        -- local key = string.match(line, "^([^=]+)")
-        -- local value = string.match(line, "=(.+)$")
-        -- currentConfig[key] = value
     end
 
     return currentConfig
 end
 
+--- Returns parsed .env vars. Wraps loadConfig in pcall for safety.
+---@return table Key-value dict
 function M.get_vars()
     local c = {}
     local success, err = pcall(function()

@@ -1,9 +1,15 @@
 local await = require("packages.core.async").await
 
+--- HTTP client via vim.system(). Makes async requests with curl underneath.
 local M = {}
 M.__index = M
 
-
+--- Makes HTTP request. Returns raw response body as string.
+---@param method string HTTP method ("GET", "POST", etc.)
+---@param url string Full URL
+---@param headers table<string,string> Request headers
+---@param opts table|nil Config with .data for body
+---@return string|nil Response body or nil on failure
 function M.create_request(method, url, headers, opts)
     return await(function(done)
         local arguments = {
