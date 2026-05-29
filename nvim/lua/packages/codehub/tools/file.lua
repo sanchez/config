@@ -142,16 +142,17 @@ local write_file = Tool.new({
 })
 
 
---- Replaces one occurrence of old_string with new_string.
---- Errors if old_string missing or matchs multiple times.
+--- Replaces lines in range [start_line, end_line] with new_content.
+--- Lines are 1-indexed. Both bounds inclusive. new_content may be empty to delete.
 ---@type Tool
 local edit_file = Tool.new({
     name = "edit_file",
-    description = "Applies a partial edit to a file by replacing old_string with new_string. The old_string must match exactly one occurrence in the file.",
+    description = "Replaces lines start_line through end_line (1-indexed, inclusive) with new_content. Provide empty new_content to delete the range.",
     inputs = {
         { name = "file_path", description = "The absolute path to the file to edit", type = "string", is_required = true },
-        { name = "old_string", description = "The text to replace", type = "string", is_required = true },
-        { name = "new_string", description = "The text to replace it with", type = "string", is_required = true },
+        { name = "start_line", description = "First line to replace (1-indexed)", type = "number", is_required = true },
+        { name = "end_line", description = "Last line to replace (1-indexed, inclusive)", type = "number", is_required = true },
+        { name = "new_content", description = "The text to insert in place of the range. Can be multi-line. Empty string deletes the range.", type = "string", is_required = true },
     },
     callback = function(history, inputs)
         if type(inputs) ~= "table" then
@@ -169,44 +170,61 @@ local edit_file = Tool.new({
             return err
         end
 
-        local old_str = inputs.old_string
-        local new_str = inputs.new_string
+        local start_line = tonumber(inputs.start_line)
+        local end_line = tonumber(inputs.end_line)
+        local new_content = inputs.new_content
 
-        if type(old_str) ~= "string" then
-            return "Error: old_string must be a string"
+        if not start_line or start_line < 1 or start_line ~= math.floor(start_line) then
+            return "Error: start_line must be a positive integer"
         end
-        if type(new_str) ~= "string" then
-            return "Error: new_string must be a string"
+        if not end_line or end_line < 1 or end_line ~= math.floor(end_line) then
+            return "Error: end_line must be a positive integer"
+        end
+        if end_line < start_line then
+            return "Error: end_line must be >= start_line"
+        end
+        if type(new_content) ~= "string" then
+            return "Error: new_content must be a string"
         end
 
         local f = io.open(path, "r")
         if not f then
             return "Error: file not found or cannot be read: " .. path
         end
-        local original = f:read("*a")
+        local lines = {}
+        for line in f:lines() do
+            table.insert(lines, line)
+        end
         f:close()
 
-        if type(original) ~= "string" then
-            return "Error: failed to read file: " .. path
+        if start_line > #lines then
+            return "Error: start_line (" .. start_line .. ") exceeds file length (" .. #lines .. "): " .. path
+        end
+        if end_line > #lines then
+            return "Error: end_line (" .. end_line .. ") exceeds file length (" .. #lines .. "): " .. path
         end
 
-        local count = 0
-        local escaped = old_str:gsub("([^%w])", "%%%1")
-        local _ = original:gsub(escaped, function() count = count + 1 end)
-
-        if count == 0 then
-            return "Error: old_string not found in file: " .. path
-        end
-        if count > 1 then
-            return "Error: old_string found " .. count .. " times in file, must match exactly once: " .. path
+        -- Build new line array: keep lines before range, insert new_content, keep lines after range
+        local result = {}
+        for i = 1, start_line - 1 do
+            table.insert(result, lines[i])
         end
 
-        local modified = original:gsub(escaped, new_str, 1)
+        if new_content ~= "" then
+            for line in (new_content .. "\n"):gmatch("(.-)\n") do
+                table.insert(result, line)
+            end
+        end
+
+        for i = end_line + 1, #lines do
+            table.insert(result, lines[i])
+        end
+
         f = io.open(path, "w")
         if not f then
             return "Error: cannot write file: " .. path
         end
-        f:write(modified)
+        f:write(table.concat(result, "\n"))
         f:close()
         return "File edited successfully: " .. path
     end

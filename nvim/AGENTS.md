@@ -1,416 +1,128 @@
 # Codebase Architecture
 
-Neovim configuration with embedded AI coding assistant ("CodeHub"). Two layers: Neovim config modules and the CodeHub agent system.
+Neovim config (`~/.config/nvim`) with built-in AI coding assistant ("CodeHub"). Stack: **Lua 5.1/LuaJIT**, **Neovim API**, **snacks.nvim** for UI, **blink.cmp** for completion, **plenary.nvim** for utilities. Uses `vim.pack.add()` for plugin management (not lazy.nvim).
 
-## Module Map
-
-```
-~/.config/nvim/
-├── init.lua                    # Entry point
-├── lua/
-│   ├── config/                 # Neovim settings modules
-│   │   ├── init.lua            # Loads all config modules
-│   │   ├── color.lua           # Colorscheme
-│   │   ├── editor.lua          # LSP, cmp, bufferline, lualine
-│   │   ├── git.lua             # Git integration
-│   │   ├── telescope.lua       # Telescope picker config
-│   │   └── which.lua           # Which-key bindings
-│   ├── packages/               # Plugin-like Lua packages
-│   │   ├── core/               # Shared utilities
-│   │   │   ├── async.lua       # Async/await via coroutines
-│   │   │   ├── promptpopup.lua # Prompt popup UI
-│   │   │   ├── vars.lua        # .env variable helpers
-│   │   │   └── window.lua      # Window helpers
-│   │   └── codehub/            # AI agent system
-│   │       ├── init.lua        # Entry, keymaps (<leader>cc)
-│   │       ├── agents/
-│   │       │   ├── agent.lua   # Agent definition + system prompt loading
-│   │       │   ├── history.lua # Session history, buffer rendering
-│   │       │   └── init.lua    # Agent registry
-│   │       ├── providers/      # API provider adapters
-│   │       │   ├── core.lua    # HTTP utilities (curl wrapper)
-│   │       │   ├── anthropic.lua # Anthropic API + tool handling
-│   │       │   ├── openai.lua  # OpenAI API (stub)
-│   │       │   ├── opencode.lua # OpenCode API
-│   │       │   ├── fake.lua    # Fake provider for testing
-│   │       │   └── init.lua    # Provider registry
-│   │       ├── tools/          # Agent tools
-│   │       │   ├── init.lua    # Tool registry + builtins
-│   │       │   ├── tool.lua    # Tool base class
-│   │       │   ├── file.lua    # File operations (read/write/edit/delete/list)
-│   │       │   ├── web.lua     # Web search
-│   │       │   └── skills.lua  # Skill loading from markdown
-│   │       ├── pindow.lua      # Popup window (sidebar layout)
-│   │       ├── display.lua     # Display helpers (Snacks-based)
-│   │       └── message.lua     # Message handling
-│   └── plugins/                # Plugin config
-├── agents/                     # Agent system prompts (Markdown files)
-├── skills/                     # Agent skills (Markdown + frontmatter)
-└── .env                        # API keys, config
-```
-
-## CodeHub System Flow
+## On-disk map
 
 ```
-<leader>cc -> Pindow.new() -> user input
-                              |
-                              v
-                    history:add_message("user", input)
-                              |
-                              v
-                    agent:execute(history)
-                              |
-                              v
-                    provider(agent, history, tools)
-                              |
-                    +---------+---------+
-                    |                   |
-                    v                   v
-            HTTP request            Tool calls
-            (curl wrapper)          (file/web/etc)
-                    |                   |
-                    +---------+---------+
-                              |
-                              v
-                    handle_response(history, tools, response)
-                              |
-                              v
-                    history:add_message("assistant", ...)
+init.lua                     # Entry: vim opts, keymaps, loads config + loader
+lua/
+  loader.lua                 # require("packages.codehub")
+  config/
+    init.lua                 # Plugin specs + keymaps (snacks, flash, blink.lib, fidget)
+    editor.lua               # LSP + bufferline + lualine + blink.cmp setup
+    color.lua                # catppuccin-frappe colorscheme
+    git.lua                  # lazygit.nvim integration
+    telescope.lua            # telescope finders (find_files, live_grep, buffers, help_tags)
+    which.lua                # which-key.nvim setup (helix preset)
+  packages/
+    core/
+      async.lua              # Coroutine-based async: exec(fn), await(fn) pattern
+      vars.lua               # .env file parser (KEY=VALUE, quotes, # comments)
+      window.lua             # Floating window factory (Win class)
+      promptpopup.lua        # Single-line cursor-anchored input popup
+    codehub/
+      init.lua               # Keymaps: <leader>cc (open), <leader>ca (pick agent), <leader>cd (reset)
+      pindow.lua             # Right-sidebar popup: input (3 lines) + output buffer
+      win.lua                # Simple floating window factory (legacy, used by CommandWindow)
+      display.lua            # Snacks-based message display (legacy, unused by current flow)
+      message.lua            # Collapsible message tree node
+      commandwindow.lua      # Cursor-anchored overlay wrapper around Win
+      agents/
+        init.lua             # Agent registry: Plan, Research, Build. Exports shared history.
+        agent.lua            # Agent factory: loads system prompt from agents/*.md + cwd/AGENTS.md + skills
+        history.lua          # Session buffer: messages, token/cost tracking, footer status bar
+      providers/
+        init.lua             # Provider registry (openai, anthropic, fake)
+        core.lua             # HTTP client via vim.system + curl; create_request, create_json_request
+        anthropic.lua        # Anthropic API provider: /zen/go/v1/messages, thinking, tool_use loop, retries
+        openai.lua           # OpenAI API provider: /zen/go/v1/chat/completions, tool_calls loop, retries
+        opencode.lua         # OpenCode model listing helper (GET /zen/go/v1/models)
+        fake.lua             # Test provider: simulates agent loop with hardcoded tool calls + delays
+      tools/
+        init.lua             # Tool registry: get_time, get_cwd, get_current_file + file/web/skills tools
+        tool.lua             # Tool base class: schema, execute() with pcall safety
+        file.lua             # File ops: read, write, edit, delete, list_files. Path sandbox (cwd-gated).
+        web.lua              # Exa API: websearch + webfetch tools
+        skills.lua           # Skill loader: parses .md with YAML frontmatter from skills/ dirs
+  plugins/
+    opencode.lua             # opencode.nvim plugin spec + render-markdown dependency
+    tree.lua                 # nvim-tree plugin spec (lazy=false)
+agents/
+  build.md                   # System prompt for Build agent (coding conventions + glossary)
+skills/
+  nvim_lua.md                # Neovim Lua guide (vim.api, vim.fn, vim.opt, etc.)
+  create-skill.md            # How to create skill files
+  agents-md.md               # AGENTS.md format spec
+.env                         # API keys: OPENCODE_API_KEY, EXA_API_KEY
 ```
 
-## Provider Interface
+## Key modules & seams
 
-Each provider is a function returned by `M.new(hostname, api_key, model_id)`:
+### Agent system (`codehub/agents/`)
+- **Agent** = name + systemPrompt + provider closure + tool list
+- System prompt constructed from: `agents/{name}.md` + `cwd/AGENTS.md` + auto-generated skills listing
+- **History** = session buffer with message log, token/cost accumulator, footer status bar. Rendered to a `nofile` buffer with role-based highlighting (user=Function, assistant=Normal, details=Comment, error=Error)
+- Agent registry creates 3 agents: **Plan** (DeepSeek + load_skill), **Research** (DeepSeek + web + load_skill), **Build** (DeepSeek + all file tools + skills)
 
-```lua
-provider(agent, history, tools) -> ()
-```
+### Provider seam (`codehub/providers/`)
+- **Interface**: `function(agent, history, tools)` — runs full agent loop to completion
+- **Adapters**: Anthropic (adaptive thinking, tool_use blocks), OpenAI (reasoning_effort, tool_calls blocks), Fake (test harness)
+- Both real providers loop: make_request → handle_response → repeat if tool calls present. Retry on transient errors (max 3, exponential backoff).
+- Key difference: Anthropic sends system as top-level param; OpenAI sends as message[0]. Anthropic uses `x-api-key` header; OpenAI uses `Authorization: Bearer`.
 
-- Loads system prompt from `agent.systemPrompt`
-- Reads conversation from `history.history`
-- Executes tools from `tools` table
-- Appends assistant responses via `history:add_message("assistant", ...)`
+### Tool seam (`codehub/tools/`)
+- **Interface**: Tool = name + description + input schema + callback(history, inputs)
+- **File ops**: path sandbox (`is_path_allowed`) restricts to nvim cwd, resolves symlinks to catch traversal
+- **Web**: Exa API (`api.exa.ai`) for search + content fetch. Key from .env or `$EXA_API_KEY`
+- **Skill loader**: scans `~/.config/nvim/skills/` and `cwd/skills/` for `.md` files with YAML frontmatter
 
-## Tool Interface
+### Async (`core/async.lua`)
+- `exec(callback)` — wraps callback in coroutine, provides `await` function
+- `await(done_fn)` — yields until `done_fn(done)` calls `done(...)` with results
+- Pattern: all HTTP calls go through `await` → `vim.system` with callback → `done()` on completion
 
-Tools implement:
-
-```lua
-{
-    name = "tool_name",
-    description = "What the tool does",
-    inputs = { { name, description, type, is_required } },
-    callback = function(history, inputs) -> string
-}
-```
-
-Path validation enforced via `is_path_allowed()` — agents can only access files under `vim.fn.getcwd()`.
-
----
+### UI
+- **Pindow** (`codehub/pindow.lua`): right-pinned vertical split, 3-line input at bottom, output buffer above. ESC closes, Enter submits. Width = max(74, 25% columns).
+- **Win** (`codehub/win.lua`): generic floating window factory. Used by Display and CommandWindow.
+- **History buffer**: separate `nofile` buffer shared via `agents/history.lua`, rendered into Pindow's output window.
 
 # Coding Conventions
 
-## Lua 5.1 (LuaJIT)
-
-- No `continue` (use `if not x then ... end`)
-- Tables as both arrays and dicts
-- Coroutines for async via `async.exec()`
-- Protected calls with `pcall()` for optional dependencies
-- Result-or-message pattern: `nil` + error string on failure
-- Concatenate with `..`, not `+`
-- Iterate arrays with `ipairs()`, dicts with `pairs()`
-
-## Module Pattern
-
-```lua
-local M = {}
-M.__index = M
-
-function M.new(...) ... end
-function M:method(...) ... end
-
-return M
-```
-
-Single-file modules with constructor + methods. No classes, no separate files per method. Constructor returns `setmetatable({...}, M)`.
-
-## Factory Pattern
-
-Providers and agents use factory pattern:
-
-```lua
-function M.new(hostname, api_key, model_id)
-    return function(agent, history, tools)
-        -- closure captures hostname, api_key, model_id
-    end
-end
-```
-
-`M.new()` returns a closure that captures configuration. Callers execute the returned function.
-
-## Naming
-
-- Modules: `snake_case.lua`
-- Functions/Methods: `snake_case`
-- Classes/Types: `PascalCase`
-- Constants: `SCREAMING_SNAKE_CASE`
-- Private methods: prefixed `_` (e.g., `_update_footer`)
-- Abbreviations: ok (`buf`, `fn`, `opts`, `cb`) but be consistent
-
-## Error Handling
-
-- `pcall()` wraps optional operations (file reads, directory checks)
-- `vim.NIL` for RPC-compatible nil (distinct from Lua `nil`)
-- Tool errors return error strings, never throw
-- Provider errors propagate via `error()`
-- `success, result = pcall(fn)` pattern for protected calls
-
-## Async Pattern
-
-```lua
-local async = require("packages.core.async")
-
-async.exec(function()
-    local result = await(some_async_fn)
-    -- code after await runs after promise resolves
-end)
-```
-
-Uses coroutines to simulate async/await. `await()` suspends until promise completes. The `vim.system()` callback pattern with `vim.schedule()` is the underlying mechanism.
-
-## Validation Pattern
-
-Always validate inputs at function entry:
-
-```lua
-if type(path) ~= "string" then
-    return false, "Access denied: invalid path type"
-end
-```
-
-Return `false, error_message` for validation failures. Return just the value or `true` on success.
-
-## Config Loading Pattern
-
-```lua
-local vars = require("packages.core.vars").get_vars()
-local api_key = vars["OPENCODE_API_KEY"]
-```
-
-Load `.env` once via `vars.get_vars()`. Access with `vars["KEY"]`.
-
-## Window/Buffer Validity
-
-Always check validity before operating:
-
-```lua
-local function win_is_valid(win)
-    return win and vim.api.nvim_win_is_valid(win)
-end
-```
-
-Stale references become invalid after window closes.
-
-## Neovim API Usage
-
-- `vim.api.*` for all buffer/window/namespace operations
-- `vim.bo[bufnr]` for buffer-local options
-- `vim.wo[winid]` for window-local options
-- `vim.fn.*` for Vim functions
-- `vim.uv.*` for libUV (timers, fs events, networking)
-- `vim.schedule()` to bridge uv callbacks to main event loop
-
-## String Patterns
-
-Lua patterns, not regex:
-- `%d` for digits, `%D` for non-digits
-- `%s` for whitespace, `%S` for non-whitespace
-- `%w` for word characters
-- `%b` for balanced pairs: `%b()` `%b""`
-- Must escape magic chars: `gsub("([^%w])", "%%%1")`
-
----
-
-# Brushstrokes
-
-## Guard Clauses
-
-Prefer early returns at function start:
-
-```lua
-if type(inputs) ~= "table" then
-    return "Error: invalid inputs type"
-end
-```
-
-Reduces nesting, clarifies failure modes.
-
-## Optional Dependencies
-
-```lua
-pcall(function()
-    local agentFile = agentsDir .. "/" .. name:lower() .. ".md"
-    local systemPromptLines = vim.fn.readfile(agentFile)
-    systemPrompt = systemPrompt .. table.concat(systemPromptLines, "\n")
-end)
-```
-
-`pcall()` silently handles missing files. Pattern used for skill loading, agent files, env vars.
-
-## Toggle Modifiable Pattern
-
-```lua
-vim.bo[self.buffer].modifiable = true
-vim.api.nvim_buf_set_lines(...)
-vim.bo[self.buffer].modifiable = false
-```
-
-Buffer must be `modifiable=true` before editing, `modifiable=false` after. Used in history buffer writes.
-
-## Extmark Footer Pattern
-
-```lua
-vim.api.nvim_buf_set_extmark(buffer, ns, line_count - 1, 0, {
-    virt_lines = footer_content,
-    virt_lines_above = false
-})
-```
-
-Replaces extmark each update to reposition footer. Delete old extmark first if `footer_extmark` is stored.
-
-## Table.concat for Strings
-
-```lua
-table.concat(lines, "\n")
-vim.fn.readfile(path) returns array of lines
-```
-
-Build large strings by concatenating tables, not repeated `..`.
-
-## Format Helpers
-
-```lua
-local function format_token_number(num)
-    if num > 1e9 then
-        return string.format("%.2fb", num / 1e9)
-    elseif num > 1e6 then
-        return string.format("%.2fm", num / 1e6)
-    end
-    return tostring(num)
-end
-```
-
-Abbreviate large numbers (tokens, cost).
-
-## Closure for Cleanup
-
-```lua
-local closing = false
-local function close()
-    if closing then return end
-    closing = true
-    -- actual cleanup
-end
-```
-
-Guard flag prevents double-close in event handlers.
-
-## Tree Building with Recursion
-
-```lua
-function M:flatten(items, depth)
-    table.insert(items, { message = self.message, level = depth })
-    if self.expanded then
-        for _, node in ipairs(self.nodes) do
-            node:flatten(items, depth + 1)
-        end
-    end
-    return items
-end
-```
-
-Recursively build flat list from tree structure.
-
-## Environment Variable Access
-
-```lua
-os.getenv("EXA_API_KEY")
-```
-
-Also check `vars.get_vars()` for `.env` values.
-
----
+- **OOP via metatables**: `M = {}; M.__index = M; function M.new(...) return setmetatable({...}, M) end`. Methods via `function M:method()` (implicit self).
+- **Module pattern**: every file returns a table. Public API via `M.*` or explicit return table. Internal helpers are local functions (prefixed `local function`).
+- **Docstrings**: `---` (emacs-style) above functions. Describe **why** not what. `---@param` / `---@return` annotations for LSP.
+- **Guard clauses**: nil/type checks at function entry, early return on invalid state.
+- **`pcall` for optional loading**: file reads, directory scans wrapped in `pcall` — failures are silent (system stays up).
+- **`vim.notify` for errors**: user-facing errors via `vim.notify(msg, "error")`.
+- **Keymaps**: `<leader>` as Space, `<localleader>` as `\`. Function-based callbacks preferred over command strings.
+- **Buffer/window validity checks**: always call `vim.api.nvim_win_is_valid` / `vim.api.nvim_buf_is_valid` before operating on stale refs.
+- **Snacks global**: `Snacks` used bare (not required) — loaded by snacks.nvim plugin globally. Pattern: `Snacks.picker.smart()`, `Snacks.win({...})`, `Snacks.layout.new({...})`.
+- **Private members**: leading underscore (`_update_footer`, `_write_message`, `_focused`).
+- **String formatting**: `string.format` for numbers, `vim.inspect` for debug dumps.
+- **Tool callbacks**: receive `(history, inputs)` — history for debug/error logging, inputs is the parsed args table.
 
 # Beware Of
 
-## Path Restrictions
-
-File tools (`read_file`, `write_file`, `edit_file`, `delete_file`, `list_files`) enforce `is_path_allowed()` — reject any path outside `vim.fn.getcwd()`. Security measure prevents agent from modifying config or system files.
-
-## JSON Encoding
-
-Uses `vim.fn.json_encode()` for API requests. Numbers become JSON numbers, strings must be explicit.
-
-## Buffer State
-
-History buffer created with `buftype=nofile`, `bufhidden=hide`. Must toggle `modifiable=true` before editing, `modifiable=false` after. Footer repositioned after each write via extmark.
-
-## History Array vs Buffer
-
-`history.history` stores raw API messages (role + content). Do NOT confuse with `history:add_message()` which writes to both history array AND buffer.
-
-## Tool Call Loop
-
-Anthropic provider loops until `send_again == false`. Each tool call adds result to history and triggers another API call. Risk of infinite loops if tool always returns unexpected format.
-
-## Coroutine Context
-
-`await()` cannot be called outside `async.exec()`. Common error: "await() cannot be called here."
-
-## Vim.Schedule in Callbacks
-
-When using `vim.system()` or `vim.uv.*` callbacks, wrap Neovim API calls in `vim.schedule()`:
-
-```lua
-vim.system(args, {}, function(obj)
-    vim.schedule(function()
-        -- vim.api calls here
-    end)
-end)
-```
-
-## Empty Tables
-
-Empty table `{}` is truthy in Lua. Use `vim.tbl_isempty()` for dict emptiness.
-
-## Module Caching
-
-`require()` caches modules. Reload config clears `packages.*` and `loader.*` but not everything.
-
----
+- **History buffer is shared**: `agents/history.lua` creates one buffer per session. Pindow receives it via constructor. Don't create multiple History instances.
+- **Provider closure interface**: providers return a `function(agent, history, tools)` — not an object. The agent loop is fire-and-forget wrapped in `async.exec()`.
+- **System prompt in Anthropic is top-level `system` field**, not a message. OpenAI sends it as first message with `role: "system"`. The `get_session_messages` functions differ between providers.
+- **OpenAI provider `make_request`** uses `["Authorization"]` vs Anthropic's `["x-api-key"]` header. URL endpoints differ (`/chat/completions` vs `/messages`).
+- **Path sandbox**: `is_path_allowed` resolves symlinks via `vim.fn.resolve`. If a symlink points outside cwd, it's rejected. This includes dotfiles that resolve to other paths.
+- **`edit_file` count logic**: regex escapes non-word chars with `%` prefix. Gsub-based count may not match exact string if special pattern chars present. Use only for literal string replacement.
+- **Retry logic blocks event loop**: `delay_ms` uses `vim.wait` (busy-wait). UI freezes during retries. Acceptable for short delays, but long backoffs will hang nvim.
+- **`.env` file**: parsed at `vars.lua` load time. Changes require re-source. Keys are OPENCODE_API_KEY and EXA_API_KEY.
+- **OpenCode API**: both Anthropic and OpenAI providers use `opencode.ai` as host (not anthropic.com or openai.com). Models: `minimax-m2.7` (Anthropic path), `deepseek-v4-pro` (OpenAI path).
+- **`display.lua` typo**: `add_messsage` (triple-s). Legacy module — not used in current flow. Current flow uses Pindow + history buffer directly.
+- **No lazy loading for codehub**: `loader.lua` requires codehub at startup. All agent system prompts, skills, and tools are loaded at nvim init.
+- **vim.pack.add**: plugin specs use URL strings, not `owner/repo` format. This is a custom git-clone-based plugin manager, not standard lazy.nvim or packer.
 
 # Key System Goals
 
-## Neovim as AI Coding Environment
-
-Transform Neovim into an AI pair programming environment. Agent reads codebase, executes tools, edits files — all without leaving the editor.
-
-## Multi-Provider Support
-
-Abstract API providers behind common interface. Currently Anthropic primary, OpenAI/OpenCode stubs, Fake for testing.
-
-## Tool-Based Agent Execution
-
-Agent receives tools (file ops, web search, skill loading) rather than raw shell access. Path restrictions prevent misuse.
-
-## Session Persistence
-
-History buffer persists across interactions within session. `<leader>cd` resets. Agent selection persists.
-
-## Extensible Skills
-
-Skills loaded from Markdown files with YAML frontmatter. Skills describe capabilities the agent can invoke via `load_skill` tool.
-
-## terse Communication
-
-Agent response style: terse, technical, no filler. Use abbreviations. Strip articles. Pattern: `[thing] [action] [reason]. [next step].`
+- **In-editor AI coding assistant** with tool-use capabilities (file ops, web search, skill loading)
+- **Multi-agent architecture**: Plan (read-only), Research (web-enabled), Build (file-editing). Default: Build.
+- **Provider portability**: switch between Anthropic-compatible and OpenAI-compatible APIs via config. Currently both routed through OpenCode.
+- **Session persistence**: message history, token costs, agent choice tracked in buffer. Session reset via `<leader>cd`.
+- **Extensibility**: tools, skills, agents, and providers follow consistent interface patterns. New tool = Tool.new({...}), new provider = closure matching `function(agent, history, tools)`.
+- **Safety**: file tools restricted to nvim cwd. API keys in .env (gitignored). Symlink traversal blocked.
+- **UI integration**: uses native Neovim windows/splits/floats, not external terminal. Right sidebar for CodeHub, cursor-anchored popups for quick input.
