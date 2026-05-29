@@ -78,7 +78,7 @@ local load_skill = Tool.new({
         Tool.create_input("name", "Name of the skill to load", "string", true),
     },
     callback = function(history, inputs)
-        history:add_debug_line(" -> Loading skill " .. inputs.name)
+        history:add_debug_line(" -> Loading skill " .. (inputs.name or ""))
         if not inputs.name then
             return { type = "error", message = "Missing name parameter" }
         end

@@ -68,7 +68,10 @@ local read_file = Tool.new({
         end
 
         local path = inputs.file_path
-        history:add_debug_line(" -> Reading file " .. path)
+        history:add_debug_line(" -> Reading file " .. (path or ""))
+        if path == nil then
+            return { type = "error", message = "Missing path argument" }
+        end
 
         local ok, err = validate_path(path)
         if not ok then
@@ -113,7 +116,10 @@ local write_file = Tool.new({
         end
 
         local path = inputs.file_path
-        history:add_debug_line(" -> Writing file " .. path)
+        history:add_debug_line(" -> Writing file " .. (path or ""))
+        if path == nil then
+            return { type = "error", message = "Missing path argument" }
+        end
         local content = inputs.content
 
         if type(content) ~= "string" and type(content) ~= "number" then
@@ -153,7 +159,10 @@ local edit_file = Tool.new({
         end
 
         local path = inputs.file_path
-        history:add_debug_line(" -> Editing file " .. path)
+        history:add_debug_line(" -> Editing file " .. (path or ""))
+        if path == nil then
+            return { type = "error", message = "Missing path argument" }
+        end
 
         local ok, err = validate_path(path)
         if not ok then
@@ -248,7 +257,10 @@ local delete_file = Tool.new({
         end
 
         local path = inputs.file_path
-        history:add_debug_line(" -> Deleting file " .. path)
+        history:add_debug_line(" -> Deleting file " .. (path or ""))
+        if path == nil then
+            return { type = "error", message = "Missing path argument" }
+        end
 
         if type(path) ~= "string" then
             return "Error: file_path must be a string"

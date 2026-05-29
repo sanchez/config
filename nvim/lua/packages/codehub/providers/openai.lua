@@ -76,7 +76,9 @@ local function map_tools(tools)
 
         local properties = {}
         local required_properties = {}
+        local has_properties = false
         for _, property in ipairs(tool.inputs or {}) do
+            has_properties = true
             properties[property.name] = {
                 type = property.type,
                 description = property.description,
@@ -86,8 +88,8 @@ local function map_tools(tools)
             end
         end
 
-        if properties then
-            tool_definition.parameters = {
+        if has_properties then
+            tool_definition["function"].parameters = {
                 type = "object",
                 properties = properties,
                 required = required_properties,
@@ -189,8 +191,6 @@ local function handle_response(history, tools, response)
             local name = block["function"].name
             local inputs = vim.fn.json_decode(block["function"].arguments)
             history:set_status("Calling Tool " .. name .. "...")
-            print(vim.inspect(inputs))
-            print(block["function"].arguments)
 
             local result = call_tool(history, tools, name, inputs)
             if type(result) == "table" then
