@@ -13,14 +13,14 @@ local MiniMax = Providers.anthropic.new("https://opencode.ai", api_key, "minimax
 local DeepSeek = Providers.openai.new("https://opencode.ai", api_key, "deepseek-v4-flash")
 
 --- Plan agent: can load skills to understand codebase and plan changes.
-local planner = Agent.new("Plan", MiniMax, {
+local planner = Agent.new("Plan", DeepSeek, {
     tools = {
         tools.load_skill,
     }
 })
 
 --- Research agent: can search + fetch web, load skills. For investigating topics.
-local research = Agent.new("Research", MiniMax, {
+local research = Agent.new("Research", DeepSeek, {
     tools = {
         tools.load_skill,
         tools.webfetch,
@@ -29,7 +29,7 @@ local research = Agent.new("Research", MiniMax, {
 })
 
 --- Builder agent: full file access + skills. Main agent for code changes.
-local builder = Agent.new("Build", MiniMax, {
+local builder = Agent.new("Build", DeepSeek, {
     tools = {
         tools.load_skill,
         tools.get_time,

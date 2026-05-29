@@ -226,6 +226,10 @@ function M.new(hostname, api_key, model_id)
                 error(err)
             end
 
+            if not result then
+                error("Unable to get a result")
+            end
+
             send_again = handle_response(history, tools, result)
         end
 
