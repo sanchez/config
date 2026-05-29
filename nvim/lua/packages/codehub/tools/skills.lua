@@ -79,6 +79,9 @@ local load_skill = Tool.new({
     },
     callback = function(history, inputs)
         history:add_debug_line(" -> Loading skill " .. inputs.name)
+        if not inputs.name then
+            return { type = "error", message = "Missing name parameter" }
+        end
 
         local skill = skills[inputs.name]
         if skill == nil then

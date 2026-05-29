@@ -46,7 +46,7 @@ end
 ---@return any Tool result or { type = "error", message }
 function M:execute(history, inputs)
     local success, result = pcall(function()
-        return self.callback(history, inputs)
+        return self.callback(history, inputs or {})
     end)
 
     if success then

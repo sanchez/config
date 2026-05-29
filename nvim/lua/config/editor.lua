@@ -87,3 +87,26 @@ vim.api.nvim_create_autocmd("LspProgress", {
     end
   end,
 })
+
+-- LSP-based document highlighting
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(args)
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+
+        if client and client:supports_method("textDocument/documentHighlight") then
+            local augroup = vim.api.nvim_create_augroup("lsp_document_highlight", { clear = false })
+
+            vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+                buffer = args.buf,
+                group = augroup,
+                callback = vim.lsp.buf.document_highlight,
+            })
+
+            vim.api.nvim_create_autocmd("CursorMoved", {
+                buffer = args.buf,
+                group = augroup,
+                callback = vim.lsp.buf.clear_references,
+            })
+        end
+    end,
+})

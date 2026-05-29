@@ -11,7 +11,7 @@ local MAX_RETRIES = 3
 local RETRY_DELAY_MS = 1000
 
 --- Busy-wait for ms (blocks event loop; used between retries only).
-local function dely_ms(ms)
+local function delay_ms(ms)
     vim.wait(ms, function() return false end, 20, true)
 end
 
@@ -189,6 +189,8 @@ local function handle_response(history, tools, response)
             local name = block["function"].name
             local inputs = vim.fn.json_decode(block["function"].arguments)
             history:set_status("Calling Tool " .. name .. "...")
+            print(vim.inspect(inputs))
+            print(block["function"].arguments)
 
             local result = call_tool(history, tools, name, inputs)
             if type(result) == "table" then
