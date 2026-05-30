@@ -51,3 +51,15 @@
 /user-dirs.locale
 /user-tmpfiles.d
 /xsettingsd
+/autostart
+/toolbox
+/plasmarc
+/coc
+/kmenueditrc
+/kwalletrc
+/mozilla
+/pipewire
+/plasma-nm
+/plasmaparc
+/kscreenlockerrc
+/trashrc
