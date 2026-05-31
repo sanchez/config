@@ -52,15 +52,20 @@ local function validate_path(path)
 end
 
 
---- Reads file contents. Supports offset + limit for partial reads.
+--- Maximum lines read_file will return before truncating.
+--- Prevents excessive token usage from large files.
+local READ_LINE_LIMIT = 2000
+
+--- Reads file contents. Supports start_line + end_line for range reads.
+--- If range exceeds READ_LINE_LIMIT lines, returns truncated result + warning.
 ---@type Tool
 local read_file = Tool.new({
     name = "read_file",
     description = "Reads a file from the local filesystem and returns its contents",
     inputs = {
         { name = "file_path", description = "The absolute path to the file to read", type = "string", is_required = true },
-        { name = "offset", description = "The line number to start reading from (optional)", type = "number", is_required = false },
-        { name = "limit", description = "The maximum number of lines to read (optional)", type = "number", is_required = false },
+        { name = "start_line", description = "The line number to start reading from (1-indexed, optional, defaults to 1)", type = "number", is_required = false },
+        { name = "end_line", description = "The line number to stop reading at (1-indexed, inclusive, optional, defaults to end of file)", type = "number", is_required = false },
     },
     callback = function(history, inputs)
         if type(inputs) ~= "table" then
@@ -82,21 +87,54 @@ local read_file = Tool.new({
         if not f then
             return "Error: file not found or cannot be read: " .. path
         end
+
+        local start_line = tonumber(inputs.start_line) or 1
+        local end_line = tonumber(inputs.end_line) -- nil if not provided
+
+        if start_line < 1 or start_line ~= math.floor(start_line) then
+            f:close()
+            return "Error: start_line must be a positive integer"
+        end
+        if end_line and (end_line < 1 or end_line ~= math.floor(end_line)) then
+            f:close()
+            return "Error: end_line must be a positive integer"
+        end
+        if end_line and end_line < start_line then
+            f:close()
+            return "Error: end_line must be >= start_line"
+        end
+
         local lines = {}
-        local offset = tonumber(inputs.offset) or 1
-        local limit = tonumber(inputs.limit)
         local line_num = 0
+        local truncated = false
+
         for line in f:lines() do
             line_num = line_num + 1
-            if line_num >= offset then
+            if line_num >= start_line then
+                if #lines >= READ_LINE_LIMIT then
+                    truncated = true
+                    break
+                end
                 table.insert(lines, line)
-                if limit and #lines >= limit then
+                if end_line and line_num >= end_line then
                     break
                 end
             end
         end
         f:close()
-        return table.concat(lines, "\n")
+
+        if line_num < start_line then
+            return "Error: start_line (" .. start_line .. ") exceeds file length (" .. line_num .. "): " .. path
+        end
+
+        local result = table.concat(lines, "\n")
+
+        if truncated then
+            result = result .. "\n\n... [TRUNCATED: read limit of "
+                .. READ_LINE_LIMIT .. " lines reached. Use start_line/end_line to read remaining lines.]"
+        end
+
+        return result
     end
 })
 

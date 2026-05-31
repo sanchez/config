@@ -39,6 +39,26 @@ local builder = Agent.new("Build", DeepSeek, {
         tools.get_cwd,
         tools.list_files,
         tools.get_current_file,
+        tools.search_symbols,
+        tools.get_document_symbols,
+        tools.search_content,
+        tools.glob,
+    },
+})
+
+--- Ask agent: read-only agent for asking questions without it actioning on the question.
+local asker = Agent.new("Ask", DeepSeek, {
+    tools = {
+        tools.load_skill,
+        tools.get_time,
+        tools.read_file,
+        tools.get_cwd,
+        tools.list_files,
+        tools.get_current_file,
+        tools.search_symbols,
+        tools.get_document_symbols,
+        tools.search_content,
+        tools.glob,
     },
 })
 

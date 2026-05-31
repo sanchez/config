@@ -49,5 +49,6 @@ add_tools({ get_time, get_cwd, get_current_file })
 add_tools(require("packages.codehub.tools.file"))
 add_tools(require("packages.codehub.tools.web"))
 add_tools({ require("packages.codehub.tools.skills").load_skill })
+add_tools(require("packages.codehub.tools.symbols"))
 
 return all_tools
