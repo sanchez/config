@@ -1,3 +1,4 @@
+--- File delete tool. Validates path is within cwd, then os.remove. Returns success/error string for LLM consumption.
 return {
     description = "Deletes a file from the local filesystem",
     inputs = {

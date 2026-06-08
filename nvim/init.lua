@@ -1,3 +1,6 @@
+--- Neovim entry point. Sets global vim options, keymaps, then delegates to lua/config and loader.
+--- Order matters: options before plugins, keymaps before auto-loaded packages touch buffers.
+
 -- disable netrw at the very start of your init.lua
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
@@ -52,7 +55,9 @@ vim.keymap.set('n', '<leader>bn', function()
     vim.cmd('buffer ' .. n)
 end, { desc = "Jump to buffer by number" })
 
--- reload the entire nvim setup
+--- Reloads all CodeHub/loader modules without restarting Neovim.
+--- Nils out package.loaded entries so require() re-reads them fresh.
+--- Uses dofile instead of source for guaranteed Lua-path execution.
 local function reload_config()
     local keys = {}
     for k, _ in pairs(package.loaded) do

@@ -1,3 +1,4 @@
+--- File listing tool. Runs `find` in cwd, excludes .git directory. Returns sorted file listing.
 return {
     description = "Lists all files in the current directory.",
     callback = function(inputs, history)

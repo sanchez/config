@@ -1,11 +1,19 @@
+--- Floating window factory (core variant). Creates buffer + window, shows on demand, auto-closes on WinClosed.
+--- Differs from packages.codehub.win: uses "testing" style default, fires stopinsert on close via autocmd.
+--- Used by PromptPopup.
 local M = {}
 M.__index = M
 
+--- Destructor: force-deletes the backing buffer to prevent leaks. Called by __gc or manual cleanup.
 local function destructor(obj)
     vim.api.nvim_buf_delete(obj.buffer, { force = true })
 end
 M.__destructor = destructor
 
+--- Constructor. Creates nofile buffer, stores window options for later open_win call.
+--- Window not shown until :show() — caller can set keymaps on buffer before display.
+---@param opts table|nil Window options: border, width, height, zindex, relative, row, col, style, noautocmd
+---@return table Win instance with :show(), :focus(), :close(), :is_valid()
 function M.new(opts)
     opts = opts or {}
 
@@ -33,6 +41,9 @@ function M:is_valid()
     return self.win and vim.api.nvim_win_is_valid(self.win) or false
 end
 
+--- Opens the floating window. Sets local options (nofold, nowrap, noscrollbind).
+--- Idempotent: no-op if already open.
+--- Registers WinClosed autocmd to stop insert mode — caller can then re-focus elsewhere.
 function M:show()
     if self:is_valid() then
         return

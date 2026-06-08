@@ -1,4 +1,6 @@
---- Web search and fetch via Exa API. Enables agents to browse the internet.
+--- Web search/fetch via Exa API. Provides websearch + webfetch as Tool instances (legacy Tool.new pattern).
+--- Requires EXA_API_KEY in .env. Note: references packages.core.async (may not exist — verify before use).
+--- Currently unused in main CodeHub flow; kept as reference implementation for external API tools.
 local Tool = require("packages.codehub.tools.tool")
 local await = require("packages.core.async").await
 local vars = require("packages.core.vars")

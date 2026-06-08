@@ -1,3 +1,7 @@
+--- Treesitter document symbol extractor. Walks TS tree, collects function/method/class nodes with line ranges.
+--- SYMBOL_KINDS acts as allowlist — only these node types are collected. Tune to taste for more symbol types.
+--- Uses temporary buffer load (bufadd/bufload) to run treesitter against files not currently open.
+
 --- Node kinds to extract as "symbols" (tune to taste)
 local SYMBOL_KINDS = {
     ["function"] = true,

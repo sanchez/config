@@ -1,3 +1,4 @@
+--- Glob tool. Wraps vim.fn.globpath for pattern-based file search. Filters directories by default (toggle via include_dirs).
 return {
     description = "Finds files matching a glob pattern under the current working directory. Supports wildcards like **/*.lua or src/**/*.ts",
     inputs = {

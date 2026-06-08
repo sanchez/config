@@ -1,3 +1,6 @@
+--- Telescope keymaps. Provides classic fuzzy finder fallback (Snacks.picker handles most pickers now).
+--- Kept for muscle memory: <leader>ff, <leader>fg, <leader>fb, <leader>fh.
+
 vim.pack.add({
     "https://github.com/nvim-lua/plenary.nvim",
     "https://github.com/nvim-telescope/telescope.nvim"

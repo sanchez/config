@@ -10,7 +10,9 @@ local Pindow = require("packages.codehub.pindow")
 -- local skills = require("packages.codehub.skills")
 
 local agents = require("packages.codehub.agents")
+-- Select first agent as default. selected_agent is a string (agent name), not the agent object.
 local selected_agent, _ = next(agents.agents, nil)
+-- agent_list is used by the picker (Snacks.picker.select).
 local agent_list = {}
 for _, agent in pairs(agents.agents) do
     local name = agent.name

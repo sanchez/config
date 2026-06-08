@@ -1,3 +1,5 @@
+--- File edit tool. Line-range replacement (1-indexed, inclusive). Empty new_content deletes the range.
+--- Validates path within cwd, line numbers positive integers, end ≥ start, file exists, bounds in range.
 return {
     description = "Replaces lines start_line through end_line (1-indexed, inclusive) with new_content. Provide empty new_content to delete the range.",
     inputs = {

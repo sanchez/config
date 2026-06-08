@@ -1,3 +1,5 @@
+--- Ripgrep search tool. Wraps `rg --line-number --no-heading --color=never`. Max results capped at 50.
+--- Optional file_glob restricts file types (e.g. '*.lua'). _file_glob/_max_results are private params.
 return {
     description = "Searches for a text pattern across all files in the current working directory using ripgrep. Returns filepath, line number, and matching line for each match.",
     inputs = {

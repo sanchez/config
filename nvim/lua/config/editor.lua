@@ -1,3 +1,7 @@
+--- Editor plugins and LSP. Sets up lualine, bufferline, blink.cmp, lspconfig, gitsigns, referencer.
+--- Lua LSP gets special handling: workspace library config, delayed diagnostics trigger on LspProgress end.
+--- Blink.cmp uses Lua fuzzy implementation for speed; signature help enabled; auto-doc disabled to reduce noise.
+
 vim.pack.add({
     "https://github.com/romus204/referencer.nvim",
     "https://github.com/nvim-lualine/lualine.nvim",
@@ -24,6 +28,7 @@ require("bufferline").setup({
     },
 })
 
+-- Blink.cmp: completion engine with LSP + path + snippets + buffer sources
 local capabilities = require("blink.cmp").get_lsp_capabilities()
 
 vim.lsp.config("*", {
@@ -65,7 +70,9 @@ vim.api.nvim_create_autocmd("CursorHold", {
 -- Controls how long before CursorHold fires (in ms), default is 4000
 vim.opt.updatetime = 300
 
--- For some reason I have had issues where the lsp checks didn't run straight away. Copilot came up with this genius plan
+-- For some reason lua_ls diagnostics don't fire immediately on workspace open.
+-- Workaround: on LspProgress "Loading workspace" end, send didChange for every attached buffer.
+-- This forces lua_ls to re-index and surface diagnostics. Remove if upstream fixes the race.
 vim.api.nvim_create_autocmd("LspProgress", {
   callback = function(args)
     local value = vim.tbl_get(args, "data", "params", "value")

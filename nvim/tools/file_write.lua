@@ -1,3 +1,4 @@
+--- File write/create tool. Opens file in "w" mode (creates or overwrites). Validates path within cwd first.
 return {
     description = "Writes or creates a file at the given path with the given content",
     inputs = {

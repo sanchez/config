@@ -16,7 +16,7 @@ function M.new(opts)
         messages = {}
     }, M)
 
-    -- display window (read-only, shows messages)
+    -- Display window (read-only, shows messages)
     self.display_win = Snacks.win({
         show = false,
         enter = false,
@@ -24,7 +24,7 @@ function M.new(opts)
         wo = { wrap = true },
     })
 
-    -- input window (prompt buffer, anchored below display)
+    -- Input window (prompt buffer, anchored below display)
     self.input_win = Snacks.win({
         show = false,
         enter = true,
@@ -43,6 +43,7 @@ function M.new(opts)
         end,
     })
 
+    -- Right-pinned vertical layout with messages pane + single-line input at bottom
     self.layout = Snacks.layout.new({
         wins = {
             display = self.display_win,
@@ -89,7 +90,7 @@ function M:render()
 end
 
 --- Appends a message node to the tree, triggers re-render.
---- Note: typo in method name ("add_messsage" not "add_message").
+--- Typo "add_messsage" preserved — search for callers before renaming.
 ---@param message string Display text
 ---@return Message New Message node
 function M:add_messsage(message)

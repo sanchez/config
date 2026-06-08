@@ -1,3 +1,5 @@
+--- Opencode.nvim plugin spec. AI coding assistant overlay. Dependencies: plenary, blink.lib, render-markdown, blink.cmp, snacks.
+--- Renders output as markdown in opencode_output filetype. Anti-conceal disabled so code blocks remain visible.
 return {
   "sudo-tee/opencode.nvim",
   config = function()

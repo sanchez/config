@@ -1,3 +1,5 @@
+--- File read tool. Reads file line-by-line with optional start/end bounds. Truncates at 2000 lines to limit context.
+--- _start_line and _end_line are private (underscore prefix) — not required in tool call schema.
 return {
     description = "Reads a file from the local filesystem and return its contents",
     inputs = {

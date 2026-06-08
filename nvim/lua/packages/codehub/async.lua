@@ -1,3 +1,5 @@
+--- Coroutine-based async helper. await(fn) yields until fn calls done(); exec wraps callback in coroutine.
+--- Supports parallel await of multiple functions. Source: https://gist.github.com/vurentjie/566a7158038ea6e044a4321c63cacde0
 -- https://gist.github.com/vurentjie/566a7158038ea6e044a4321c63cacde0
 
 ---@vararg function

@@ -1,3 +1,10 @@
+--- OpenAI-compatible provider. Talks to opencode.ai proxy endpoint.
+--- Supports: system messages (agent.content + skills + AGENTS.md), tool calls, reasoning_content.
+--- Retry logic: 1 retry on failure/error, then throws. Handles parallel tool calls via recursion.
+--- VARS["OPENCODE_API_KEY"] from .env required.
+---
+--- Flow: get_session_messages → map_tools → make_request_with_retry → handle_response → recurse if tool calls.
+
 local MAX_RETRIES = 1
 local RETY_DELAY_MS = 1000
 
@@ -9,6 +16,12 @@ local RETY_DELAY_MS = 1000
 -- end
 
 
+--- Builds messages array for API from agent config + history.
+--- Order: agent.content (system), skills list (system), AGENTS.md (system), history messages.
+--- Handles nested content format: some messages store {role, content} inside .content field — unwraps.
+---@param agent table Agent definition (with .content, .skills)
+---@param history table History instance (with .history array)
+---@return table[] Messages array for API
 local function get_session_messages(agent, history)
     local messages = {}
 
@@ -30,6 +43,7 @@ local function get_session_messages(agent, history)
         })
     end
 
+    -- AGENTS.md content injected as system message — optional per-project context for the model
     if AGENTS_PROMPT and AGENTS_PROMPT ~= "" then
         table.insert(messages, {
             role = "system",
@@ -37,6 +51,7 @@ local function get_session_messages(agent, history)
         })
     end
 
+    -- History messages may be nested {content = {role, content}}; unwrap to clean {role, content} for API
     for _, message in ipairs(history.history) do
         if message.content.role then
             table.insert(messages, message.content)
@@ -49,6 +64,11 @@ local function get_session_messages(agent, history)
 end
 
 
+--- Converts tool definitions to OpenAI function-calling format.
+--- Inputs starting with "_" are hidden from required list (private params passed out-of-band).
+--- Tools with 0-1 properties skip parameters schema entirely.
+---@param tools table<string,table> Tool name→definition map
+---@return table[] OpenAI tool definitions
 local function map_tools(tools)
     local ret = {}
 
@@ -78,7 +98,7 @@ local function map_tools(tools)
             end
         end
 
-        if #properties > 1 then
+        if next(properties) ~= nil then
             tool_definition["function"].parameters = {
                 type = "object",
                 properties = properties,
@@ -93,6 +113,11 @@ local function map_tools(tools)
 end
 
 
+--- Single API request. POSTs to opencode.ai chat completions with model, messages, tools, reasoning_effort.
+--- Calls back with parsed JSON response or nil on error.
+---@param agent table
+---@param history table
+---@param callback fun(response: table|nil)
 local function make_request(agent, history, callback)
     local url = "https://opencode.ai/zen/go/v1/chat/completions"
     local messages = get_session_messages(agent, history)
@@ -114,6 +139,12 @@ local function make_request(agent, history, callback)
 end
 
 
+--- Retry wrapper. Retries up to MAX_RETRIES times on nil response or error object.
+--- Throws on final failure — caller (handle_response) catches and surfaces to user.
+---@param agent table
+---@param history table
+---@param callback fun(response: table)
+---@param count integer Current retry attempt (internal)
 local function make_request_with_retry(agent, history, callback, count)
     count = count or 0
 
@@ -142,6 +173,12 @@ local function make_request_with_retry(agent, history, callback, count)
 end
 
 
+--- Processes API response. Tracks costs, handles reasoning_content (logged as debug), processes tool calls.
+--- Returns send_again=true if any tool calls found — caller loops recursively until no more tool calls.
+--- Tool results appended as "tool" role messages so the model can continue processing.
+---@param history table
+---@param response table API response
+---@return boolean send_again True if tool calls require another round
 local function handle_response(history, response)
     history:add_costs(response.cost, response.usage.prompt_tokens, response.usage.completion_tokens)
 
@@ -194,6 +231,11 @@ local function handle_response(history, response)
 end
 
 
+--- Entry point. Recursive: sends request, processes response, loops if tool calls require more rounds.
+--- Sets status "Thinking..." during API wait, clears on completion.
+---@param agent table
+---@param history table
+---@param callback fun() Called when conversation round is complete (no more tool calls)
 local function execute(agent, history, callback)
     history:set_status("Thinking...")
     return make_request_with_retry(agent, history, function(response)

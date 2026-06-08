@@ -1,3 +1,5 @@
+--- Nvim-tree plugin spec. File explorer sidebar. Loaded eagerly (lazy=false) for immediate access.
+--- Shell with minimal config — all commented-out blocks are previous experiments with auto-open/close behavior.
 return {
   "nvim-tree/nvim-tree.lua",
   version = "*",

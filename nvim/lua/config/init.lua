@@ -1,3 +1,7 @@
+--- Central configuration. Declares core plugin dependencies, sets up Snacks, binds leader-key maps.
+--- All picker keymaps use Snacks.picker (faster than Telescope). LSP pickers bound to g* prefix per convention.
+--- Requires sub-config modules (color, editor, git, telescope, which) at end — order ensures overrides apply last.
+
 vim.pack.add({
     -- core libraries
     "https://github.com/nvim-tree/nvim-web-devicons",
@@ -14,12 +18,13 @@ vim.pack.add({
 
 require("fidget").setup({})
 
+-- Flash: fast character/treesitter jumping, bound to f/F in normal/visual/operator-pending
 require("flash").setup({})
 vim.keymap.set({ "n", "x", "o" }, "f", function() require("flash").jump() end, { desc = "Flash" })
 vim.keymap.set({ "n", "x", "o" }, "F", function() require("flash").treesitter() end, { desc = "Flash Treesitter" })
 vim.keymap.set("c", "<c-s>", function() require("flash").toggle() end, { desc = "Toggle Flash Search" })
 
-
+-- Snacks provides notifier, explorer, dashboard, image viewer, indent guides, input, statuscolumn
 local Snacks = require("snacks")
 Snacks.setup({
     notifier = { enabled = true },
@@ -61,7 +66,7 @@ end, { desc = "Show LazyGit" })
 
 vim.keymap.set("n", "<leader><space>", function() Snacks.picker.smart() end, { desc = "Smart Find Files" })
 
-
+-- Iterate keybind table to avoid repetitive vim.keymap.set calls. Each entry: { lhs, rhs, desc }
 local keybinds = {
     -- grep
     { "<leader>sb", Snacks.picker.lines, "Buffer Lines" },

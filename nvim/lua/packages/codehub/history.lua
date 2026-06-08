@@ -52,7 +52,7 @@ function M.new(default_agent)
 end
 
 
---- Abbreviates large numbers: >1M shows "X.XXm", >1K shows "X.XXk", else raw number.
+--- Abbreviates large numbers: >1B shows "X.XXb", >1M shows "X.XXm", >1K shows "X.XXk", else raw number.
 local function format_token_number(num)
     if num > 1e9 then
         return string.format("%.2fb", num / 1e9)
@@ -97,6 +97,8 @@ end
 
 
 --- Writes role-colored message lines to buffer, updates footer, scrolls to bottom.
+--- System messages skipped — they're internal context and would clutter the display.
+--- Adds blank line before user messages for visual separation.
 ---@param role "user"|"assistant"|"details"|"error" Role determines highlight group
 ---@param message string Content to write
 function M:_write_message(role, message)
@@ -144,21 +146,22 @@ function M:_write_message(role, message)
 end
 
 
---- Appends debug/detail message (grey text). Writes to history array + buffer.
+--- Appends debug/detail message (grey text). Writes to buffer only (not history array).
 function M:add_debug_line(message)
     self:_write_message("details", message)
 end
 
 
---- Appends error message (red text). Writes to history array + buffer.
+--- Appends error message (red text). Writes to buffer only (not history array).
 function M:add_error_line(message)
     self:_write_message("error", message)
 end
 
 
 --- Adds message to history array + buffer. Validates role, auto-scrolls buffer.
+--- Only writes to buffer when message is a string (tool result blocks are tables — they skip display).
 ---@param role "user"|"assistant"|"system" API role
----@param message string|table Content or tool result block
+---@param message string|table Content string or tool result block {role="tool", tool_call_id, content}
 function M:add_message(role, message)
     local role_options = {
         user = true,

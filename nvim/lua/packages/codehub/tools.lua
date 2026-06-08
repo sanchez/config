@@ -1,3 +1,8 @@
+--- Tool registry. Loads tool definitions from ~/.config/nvim/tools and .hub/tools.
+--- Tools are .lua files returning {description, inputs, callback}. Built-in tool "load_skill" seeded before user tools.
+--- Path validation: all file operations must resolve within cwd. Prevents ../ escapes.
+--- call_tool wraps tool.callback in pcall — returns error table on crash so LLM can self-correct.
+
 local Loader = require("packages.codehub.config_loader")
 local Skills = require("packages.codehub.skills")
 
@@ -7,7 +12,10 @@ local tools_dirs = {
     vim.fn.getcwd() .. "/.hub/tools",
 }
 
-
+--- Security boundary: resolves path, verifies it's within cwd. Blocks symlink escapes via vim.fn.resolve.
+---@param path string Requested path
+---@param arg_name string Parameter name for error messages
+---@return boolean, string|nil True if allowed, or false + error message
 function is_path_allowed(path, arg_name)
     arg_name = arg_name or "path"
 
@@ -45,7 +53,9 @@ function is_path_allowed(path, arg_name)
     return false, "Access denied: " .. arg_name .. " is outside the current nvim directory"
 end
 
-
+--- validate_path wrapper that throws on failure. Called by tool callbacks for early exit.
+---@param path string
+---@param arg_name string
 function validate_path(path, arg_name)
     local ok, err = is_path_allowed(path, arg_name)
     if not ok then
@@ -53,7 +63,9 @@ function validate_path(path, arg_name)
     end
 end
 
-
+--- Convenience: returns standard error table for LLM consumption.
+---@param message string Error description
+---@return table { type = "error", message = message }
 function tool_error(message)
     return { type = "error", message = message }
 end
@@ -72,7 +84,11 @@ local tools = Loader.load_objects_from_paths(tools_dirs, {
     },
 })
 
-
+--- Looks up tool by name and invokes callback. Wrapped in pcall: crashes return error table instead of breaking the loop.
+---@param history table History instance (passed to tool for debug logging)
+---@param name string Tool name
+---@param inputs table Tool arguments
+---@return any Tool result (string, table, or error table)
 local function call_tool(history, name, inputs)
     for _, tool in pairs(tools) do
         if tool.name == name then

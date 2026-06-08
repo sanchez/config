@@ -1,3 +1,6 @@
+--- Git integration. Configures lazygit.nvim (floating window launcher).
+--- Keymap lives in config/init.lua via Snacks.lazygit for consistency with other pickers.
+
 vim.pack.add({
     "https://github.com/kdheepak/lazygit.nvim",
 })

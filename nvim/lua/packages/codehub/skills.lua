@@ -1,3 +1,7 @@
+--- Skill registry. Loads skill definitions from ~/.config/nvim/skills and .hub/skills.
+--- Skills are markdown documents — content injected as system prompt for context-aware assistance.
+--- get_skill_content used by load_skill built-in tool.
+
 local Loader = require("packages.codehub.config_loader")
 
 

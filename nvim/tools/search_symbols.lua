@@ -1,3 +1,5 @@
+--- LSP workspace symbol search. Sends workspace/symbol request to all attached clients, aggregates results.
+--- Timeout 5000ms. Falls back to "No LSP results found" string if empty.
 return {
     description = "Searches for symbols (functions, classes, variables, etc.) across the entire workspace by name using LSP. Returns matching symbols with their file path and line number.",
     inputs = {

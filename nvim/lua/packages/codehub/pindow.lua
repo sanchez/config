@@ -1,5 +1,5 @@
 --- Popup window for CodeHub interaction. Right sidebar with input + output panes.
---- Holds input prompt (3 lines) and output buffer (remaining space).
+--- Holds input prompt (1 line) and output buffer (remaining space).
 local M = {}
 M.__index = M
 
@@ -47,16 +47,6 @@ local function create_windows(ns, sidebar_width, input_buf, output_buf)
     -- Resize to 3 lines
     vim.cmd("resize 3")
 
-    -- Configure sidebar windows
-    -- for _, win in ipairs({ input_win, output_win }) do
-    --     vim.wo[win].number = false
-    --     vim.wo[win].relativenumber = false
-    --     vim.wo[win].signcolumn = "no"
-    --     vim.wo[win].wrap = false
-    --     vim.wo[win].cursorline = false
-    --     vim.wo[win].winfixwidth = true
-    -- end
-
     vim.wo[input_win].winfixheight = true
 
     return input_win, output_win
@@ -89,6 +79,7 @@ function M.new(title, ns, output_buf, callback)
         callback(finalText)
     end, { buffer = input_buf })
 
+    -- closing guard: prevents WinClosed autocmd from re-entering close() on the second window
     local closing = false
     local function close()
         if closing then
@@ -105,6 +96,8 @@ function M.new(title, ns, output_buf, callback)
         end
     end
 
+    -- Auto-close the pair: if either window is closed, clean up both.
+    -- vim.schedule defers to avoid WinClosed re-entry.
     vim.api.nvim_create_autocmd("WinClosed", {
         callback = function(args)
             local closed = tonumber(args.match)
