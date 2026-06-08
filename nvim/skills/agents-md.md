@@ -23,6 +23,16 @@ Include the common coding conventions used within the codebase. These can be sof
 
 As technique/brushwork is to an artist a description of how they achieve perfection, then this section should describe how the codebase achieves its perfection.
 
+This section should be extensive, make sure to capture all the styles and characteristics of how the user codes. For example:
+
+- How does the user structure blocks of code, when/where do they leave spaces, what's the rules for how this is completed
+- When to break things up over multiple lines vs a single line
+- How are functions and arguments structured
+- How are classes designed, what are recurring rules in the codebase
+- And many more.
+
+The goal should be to capture all the inherit rules of the codebase so that someone could perfectly mimick the style of the codebase. This section is the most important to capture.
+
 # Beware Of
 
 Include things to watch out for, design decisions that might not be obvious on the surface. Or things that seemingly run counter to how someone new/fresh might understand

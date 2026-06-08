@@ -131,7 +131,7 @@ local function make_request(agent, history, callback)
         data = {
             model = agent.model,
             messages = messages,
-            parallel_tools_calls = true,
+            parallel_tools_calls = false,
             tools = tools,
             reasoning_effort = "xhigh",
         },
