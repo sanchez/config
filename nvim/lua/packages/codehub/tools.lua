@@ -28,7 +28,7 @@ function is_path_allowed(path, arg_name)
     raw_abs = raw_abs:gsub("(.+)/+$", "%1")
     local abs_path = vim.fs.normalize(raw_abs)
     local allowed = vim.fs.normalize(cwd)
-    local resolved = vim.fs.resolve(abs_path)
+    local resolved = vim.fn.resolve(abs_path)
 
     if type(resolved) ~= "string" then
         return false, "Access denied: path of " .. arg_name .. " resolution failed"
@@ -84,7 +84,6 @@ local function call_tool(history, name, inputs)
                 return result
             end
 
-            error(result)
             return tool_error(result)
         end
     end

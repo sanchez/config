@@ -13,16 +13,25 @@ local SYMBOL_KINDS = {
 ---@param node userdata TSNode root
 ---@param results table Accumulator
 local function collect_symbols(node, results)
-    local kind = node:type()
+    local ok, kind = pcall(function() return node:type() end)
+    if not ok then return end
+
     if SYMBOL_KINDS[kind] then
-        local start_row, _, end_row, _ = node.range()
+        -- Defensively pcall range() — some treesitter nodes may not support it
+        local ok_range, start_row, _, end_row, _ = pcall(function() return node:range() end)
+        if not ok_range then return end
 
         -- Try to get the symbol name from first named child (usually the identifier)
         local name = "<anonymous>"
         for child in node:iter_children() do
-            if child:named() and child:type():find("name") or child:type() == "identifier" then
-                name = vim.treesitter.get_node_text(child, 0)
-                break
+            local ok_named, is_named = pcall(function() return child:named() end)
+            local ok_ctype, child_type = pcall(function() return child:type() end)
+            if ok_named and ok_ctype then
+                -- match identifier nodes, or named nodes whose type contains "name"
+                if child_type == "identifier" or (is_named and child_type:find("name")) then
+                    name = vim.treesitter.get_node_text(child, 0)
+                    break
+                end
             end
         end
 

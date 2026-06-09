@@ -12,23 +12,23 @@ local RETY_DELAY_MS = 1000
 local function get_session_messages(agent, history)
     local messages = {}
 
-    -- if agent.content then
-    --     table.insert(messages, {
-    --         role = "system",
-    --         content = agent.content,
-    --     })
-    -- end
+    if agent.content then
+        table.insert(messages, {
+            role = "system",
+            content = agent.content,
+        })
+    end
 
-    -- if agent.skills then
-    --     local skills = "# Skills\nThe below skills are available for use with the `load_skill` tool:\n"
-    --     for _, skill in pairs(agent.skills) do
-    --         skills = skills .. "- **" .. skill.name .. ":** " .. skill.description .. "\n"
-    --     end
-    --     table.insert(messages, {
-    --         role = "system",
-    --         content = skills,
-    --     })
-    -- end
+    if agent.skills then
+        local skills = "# Skills\nThe below skills are available for use with the `load_skill` tool:\n"
+        for _, skill in pairs(agent.skills) do
+            skills = skills .. "- **" .. skill.name .. ":** " .. skill.description .. "\n"
+        end
+        table.insert(messages, {
+            role = "system",
+            content = skills,
+        })
+    end
 
     if AGENTS_PROMPT and AGENTS_PROMPT ~= "" then
         table.insert(messages, {
