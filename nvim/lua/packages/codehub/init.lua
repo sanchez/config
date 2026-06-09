@@ -3,26 +3,49 @@
 ---   <leader>cc - Open CodeHub prompt
 ---   <leader>ca - Pick agent
 ---   <leader>cd - Reset session
-local async = require("packages.core.async")
 
 local Pindow = require("packages.codehub.pindow")
+
+-- local tools = require("packages.codehub.tools")
+-- local skills = require("packages.codehub.skills")
+
 local agents = require("packages.codehub.agents")
-local agent_names = vim.tbl_map(function(x) return x.name end, agents.agents)
+local selected_agent, _ = next(agents.agents, nil)
+local agent_list = {}
+for _, agent in pairs(agents.agents) do
+    local name = agent.name
+    -- if agent.description then
+    --     name = name .. " - " .. agent.description
+    -- end
+
+    table.insert(agent_list, name)
+end
+
+local providers = require("packages.codehub.providers")
+local skills = require("packages.codehub.skills")
+local tools = require("packages.codehub.tools")
+
+
+local History = require("packages.codehub.history")
+local history = History.new(selected_agent)
+
 
 --- Keymap: pick agent from list. Updates shared history's default agent.
 vim.keymap.set('n', '<leader>ca', function ()
-    Snacks.picker.select(agent_names, { prompt = "Select Agent" }, function(choice)
+    Snacks.picker.select(agent_list, { prompt = "Select Agent" }, function(choice)
         if not choice then return end
-        agents.history.agent = choice
-        agents.history:_update_footer()
+
+        selected_agent = choice
+        history.agent = choice
+        history:_update_footer()
     end)
 end, { desc = "Pick what Agent to use" })
 
 --- Looks up agent by name in registry.
 ---@return table|nil Agent instance
 local function get_selected_agent()
-    local name = agents.history.agent
-    for _, agent in ipairs(agents.agents) do
+    local name = history.agent
+    for _, agent in pairs(agents.agents) do
         if agent.name == name then
             return agent
         end
@@ -32,23 +55,44 @@ end
 
 --- Keymap: clear session. Resets history (messages, costs, status).
 vim.keymap.set("n", "<leader>cd", function()
-    agents.history:reset()
+    history:reset()
 end, { desc = "Clears the current agent session" })
+
+local function handle_execute(input)
+    local agent = get_selected_agent()
+    if agent == nil then
+        history:add_error_line("Unable to find agent: " .. history.agent)
+        return
+    end
+
+    if agent.callback then
+        agent.callback({
+            input = input,
+            history = history,
+            agents = agents,
+            providers = providers,
+            skills = skills,
+            tools = tools,
+        })
+        return
+    end
+
+    if not agent.provider then
+        history:add_error_line("Agent does not have a provider set, please set one")
+        return
+    end
+
+    history:add_message("user", input)
+
+    providers.invoke_provider(agent, history, function()
+        vim.notify("CodeHub has finished processing", "success")
+    end)
+end
 
 --- Keymap: open CodeHub. Creates Pindow, registers Enter handler.
 --- Adds user message to history, then runs agent:execute() async.
 vim.keymap.set("n", "<leader>cc", function()
-    local pindow = Pindow.new("CodeHub", agents.history.ns, agents.history.buffer, function(input)
-        local agent = get_selected_agent()
-        if agent == nil then
-            agents.history:add_error_line("Unable to find agent: " .. agents.history.agent)
-            return
-        end
-
-        agents.history:add_message("user", input)
-        async.exec(function()
-            agent:execute(agents.history)
-            vim.notify("CodeHub has finished processing", "success")
-        end)
+    Pindow.new("CodeHub", history.ns, history.buffer, function(input)
+        handle_execute(input)
     end)
 end, { desc = "Opens CodeHub" })

@@ -159,7 +159,6 @@ end
 --- Adds message to history array + buffer. Validates role, auto-scrolls buffer.
 ---@param role "user"|"assistant"|"system" API role
 ---@param message string|table Content or tool result block
----@param write_buffer boolean|nil Whether to render to display buffer (default true)
 function M:add_message(role, message)
     local role_options = {
         user = true,

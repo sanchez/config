@@ -18,6 +18,9 @@ vim.opt.expandtab = true
 -- keep the sign column to stop gutter resizing
 vim.opt.signcolumn = "yes"
 
+-- exit insert mode with double j
+vim.keymap.set('i', 'jj', '<Esc>', { noremap = true, silent = true })
+
 -- disable automatic comments when pressing enter on end of line
 vim.cmd('autocmd BufEnter * set formatoptions-=cro')
 vim.cmd('autocmd BufEnter * setlocal formatoptions-=cro')
