@@ -53,6 +53,14 @@ Snacks.setup({
         },
         refresh = 50,
     },
+    picker = {
+        sources = {
+            explorer = {
+                hidden = true,
+                ignored = true,
+            },
+        },
+    },
 })
 require("todo-comments").setup({})
 

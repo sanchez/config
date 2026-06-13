@@ -11,6 +11,8 @@ vim.pack.add({
     "https://github.com/akinsho/bufferline.nvim",
     "https://github.com/rafamadriz/friendly-snippets",
     "https://github.com/saghen/blink.cmp",
+
+    "https://github.com/hiphish/rainbow-delimiters.nvim",
 })
 
 require("lualine").setup({
@@ -35,6 +37,7 @@ vim.lsp.config("*", {
     capabilities = capabilities
 })
 
+-- Lua Config
 vim.lsp.config("lua_ls", {
     settings = {
         Lua = {
@@ -47,8 +50,18 @@ vim.lsp.config("lua_ls", {
         },
     },
 })
-
 vim.lsp.enable("lua_ls")
+
+-- Rust Config
+vim.lsp.config("rust_analyzer", {
+    settings = {
+        ["rust-analyzer"] = {
+            check = { command = "clippy" },
+            cargo = { allFeatures = true },
+        },
+    },
+})
+vim.lsp.enable("rust_analyzer")
 
 local cmp = require("blink.cmp")
 -- cmp.build():wait(60000)
@@ -99,8 +112,13 @@ vim.api.nvim_create_autocmd("LspProgress", {
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
         local client = vim.lsp.get_client_by_id(args.data.client_id)
+        if not client then return end
 
-        if client and client:supports_method("textDocument/documentHighlight") then
+        if client:supports_method("textDocument/inlayHint") then
+            vim.lsp.inlay_hint.enable(true, { bufnr = args.buf })
+        end
+
+        if client:supports_method("textDocument/documentHighlight") then
             local augroup = vim.api.nvim_create_augroup("lsp_document_highlight", { clear = false })
 
             vim.api.nvim_create_autocmd({ "CursorHold" }, {

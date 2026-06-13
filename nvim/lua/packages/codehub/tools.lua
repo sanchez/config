@@ -104,7 +104,7 @@ local function call_tool(history, name, inputs)
         end
     end
 
-    error("Failed to find tool: " .. name)
+    print("Failed to find tool: " .. name)
     return tool_error("Failed to find tool")
 end
 
