@@ -99,7 +99,7 @@ end
 --- Writes role-colored message lines to buffer, updates footer, scrolls to bottom.
 --- System messages skipped — they're internal context and would clutter the display.
 --- Adds blank line before user messages for visual separation.
----@param role "user"|"assistant"|"details"|"error" Role determines highlight group
+---@param role "user"|"assistant"|"details"|"error"|"tool" Role determines highlight group
 ---@param message string Content to write
 function M:_write_message(role, message)
     if role == "system" then return end
@@ -109,6 +109,7 @@ function M:_write_message(role, message)
         assistant = "Normal",
         details = "Comment",
         error = "Error",
+        tool = "Special",
     }
 
     vim.bo[self.buffer].modifiable = true
@@ -146,15 +147,18 @@ function M:_write_message(role, message)
 end
 
 
---- Appends debug/detail message (grey text). Writes to buffer only (not history array).
+--- Appends debug/detail message. " ->" prefixed (tool output) → Special, else (Thinking) → Comment.
 function M:add_debug_line(message)
-    self:_write_message("details", message)
+    local role = message:match("^%s*->") and "tool" or "details"
+    self:_write_message(role, message)
 end
-
-
---- Appends error message (red text). Writes to buffer only (not history array).
 function M:add_error_line(message)
     self:_write_message("error", message)
+end
+
+--- Appends tool call message (Special highlight). Writes to buffer only (not history array).
+function M:add_tool_line(message)
+    self:_write_message("tool", message)
 end
 
 
@@ -208,6 +212,54 @@ function M:reset()
     vim.api.nvim_set_option_value("modifiable", true, { buf = self.buffer })
     vim.api.nvim_buf_set_lines(self.buffer, 0, -1, false, { "Welcome to CodeHub, please continue!" })
     vim.api.nvim_set_option_value("modifiable", false, { buf = self.buffer })
+
+    self:_update_footer()
+end
+
+--- Serializes session state for persistence. Returns plain table (no Neovim handles).
+---@return table { history, total_cost, input_tokens, output_tokens, agent }
+function M:serialize()
+    return {
+        history = self.history,
+        total_cost = self.total_cost,
+        input_tokens = self.input_tokens,
+        output_tokens = self.output_tokens,
+        agent = self.agent,
+    }
+end
+
+--- Restores session from serialized data. Resets buffer to welcome line, replays messages.
+--- Handles display for assistant tables (content + reasoning). Tool results not displayed.
+---@param data table Serialized session from serialize()
+function M:restore(data)
+    vim.bo[self.buffer].modifiable = true
+    vim.api.nvim_buf_set_lines(self.buffer, 0, -1, false, { "Welcome to CodeHub, more details to come!" })
+    vim.api.nvim_buf_set_extmark(self.buffer, self.ns, 0, 0, { line_hl_group = "Comment" })
+    vim.bo[self.buffer].modifiable = false
+
+    self.total_cost = 0
+    self.input_tokens = 0
+    self.output_tokens = 0
+    self.history = {}
+
+    self.agent = data.agent or self.agent
+
+    for _, msg in ipairs(data.history or {}) do
+        self:add_message(msg.role, msg.content)
+        -- add_message only writes strings to buffer; tables need explicit display.
+        if msg.role == "assistant" and type(msg.content) == "table" then
+            if msg.content.reasoning_content then
+                self:_write_message("details", "Thinking: " .. msg.content.reasoning_content)
+            end
+            if msg.content.content then
+                self:_write_message("assistant", msg.content.content)
+            end
+        end
+    end
+
+    self.total_cost = data.total_cost or 0
+    self.input_tokens = data.input_tokens or 0
+    self.output_tokens = data.output_tokens or 0
 
     self:_update_footer()
 end

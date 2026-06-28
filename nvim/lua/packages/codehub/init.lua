@@ -31,6 +31,16 @@ local tools = require("packages.codehub.tools")
 local History = require("packages.codehub.history")
 local history = History.new(selected_agent)
 
+local Session = require("packages.codehub.session")
+
+--- Auto-save session on exit if chat has messages.
+vim.api.nvim_create_autocmd("VimLeavePre", {
+    callback = function()
+        if #history.history > 0 then
+            Session.save(history:serialize())
+        end
+    end,
+})
 
 --- Keymap: pick agent from list. Updates shared history's default agent.
 vim.keymap.set('n', '<leader>ca', function ()
@@ -55,9 +65,10 @@ local function get_selected_agent()
     return nil
 end
 
---- Keymap: clear session. Resets history (messages, costs, status).
+--- Keymap: clear session. Resets history (messages, costs, status) and deletes saved session.
 vim.keymap.set("n", "<leader>cd", function()
     history:reset()
+    Session.delete()
 end, { desc = "Clears the current agent session" })
 
 local function handle_execute(input)
@@ -87,13 +98,22 @@ local function handle_execute(input)
     history:add_message("user", input)
 
     providers.invoke_provider(agent, history, function()
+        Session.save(history:serialize())
         vim.notify("CodeHub has finished processing", "success")
     end)
 end
 
 --- Keymap: open CodeHub. Creates Pindow, registers Enter handler.
---- Adds user message to history, then runs agent:execute() async.
+--- Restores previous session if history is fresh and saved session exists.
 vim.keymap.set("n", "<leader>cc", function()
+    if #history.history == 0 and Session.exists() then
+        local data = Session.load()
+        if data then
+            history:restore(data)
+            selected_agent = history.agent
+        end
+    end
+
     Pindow.new("CodeHub", history.ns, history.buffer, function(input)
         handle_execute(input)
     end)

@@ -176,6 +176,7 @@ end
 --- Processes API response. Tracks costs, handles reasoning_content (logged as debug), processes tool calls.
 --- Returns send_again=true if any tool calls found — caller loops recursively until no more tool calls.
 --- Tool results appended as "tool" role messages so the model can continue processing.
+--- Tool debug output (from tool callbacks via add_debug_line) renders in Special highlight.
 ---@param history table
 ---@param response table API response
 ---@return boolean send_again True if tool calls require another round
@@ -218,6 +219,7 @@ local function handle_response(history, response)
             result = vim.fn.json_encode(result)
         end
 
+        -- Store in history for API context (not displayed)
         history:add_message("user", {
             role = "tool",
             tool_call_id = block.id,

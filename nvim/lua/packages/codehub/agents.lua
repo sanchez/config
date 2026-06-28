@@ -88,7 +88,9 @@ for _, agent in pairs(agents) do
 
             args.history:add_message("user", args.input)
 
+            local Session = require("packages.codehub.session")
             args.providers.invoke_provider(agent, args.history, function()
+                Session.save(args.history:serialize())
                 vim.notify("CodeHub has finished processing", "success")
             end)
         end
