@@ -209,6 +209,9 @@ local function handle_response(history, response)
         history:_write_message("assistant", choice.message.content)
     end
 
+    -- Clear file edit locks so each batch starts fresh
+    clear_file_edit_locks()
+
     for _, block in ipairs(choice.message.tool_calls or {}) do
         local name = block["function"].name
         local inputs = vim.fn.json_decode(block["function"].arguments)

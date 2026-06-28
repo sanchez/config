@@ -1,6 +1,7 @@
 --- Tool registry. Loads tool definitions from ~/.config/nvim/tools and .hub/tools.
 --- Tools are .lua files returning {description, inputs, callback}. Built-in tool "load_skill" seeded before user tools.
 --- Path validation: all file operations must resolve within cwd. Prevents ../ escapes.
+--- File edit locking: same file can't be edited twice in one tool-call batch; LLM must process results first.
 --- call_tool wraps tool.callback in pcall — returns error table on crash so LLM can self-correct.
 
 local Loader = require("packages.codehub.config_loader")
@@ -70,6 +71,24 @@ function tool_error(message)
     return { type = "error", message = message }
 end
 
+--- File edit lock: prevents same file being edited twice in one tool-call batch.
+--- LLM must process the result of the first edit before issuing another to the same file.
+local edited_files = {}
+
+--- Checks if path is already locked from a prior edit in this batch. Locks it if not.
+---@param path string Absolute file path
+---@return string|nil Error message if locked, nil if lock acquired
+function check_file_edit_lock(path)
+    if edited_files[path] then
+        return "Error: " .. path .. " was already edited in this batch. Process the result before editing the same file again."
+    end
+    edited_files[path] = true
+end
+
+--- Clears all file edit locks. Called by provider before processing a new batch of tool calls.
+function clear_file_edit_locks()
+    edited_files = {}
+end
 
 local tools = Loader.load_objects_from_paths(tools_dirs, {
     load_skill = {
@@ -107,7 +126,6 @@ local function call_tool(history, name, inputs)
     print("Failed to find tool: " .. name)
     return tool_error("Failed to find tool")
 end
-
 
 return {
     tools = tools,
